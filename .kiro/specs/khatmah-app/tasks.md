@@ -6,7 +6,7 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
 
 ## Tasks
 
-- [ ] 1. Project scaffolding and infrastructure
+- [x] 1. Project scaffolding and infrastructure
   - Initialize Expo project with TypeScript (`npx create-expo-app --template`)
   - Configure `tsconfig.json` with `strict: true`, `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`
   - Create the folder structure: `app/`, `components/ui/`, `components/khatmah/`, `hooks/`, `lib/`, `theme/`, `styles/`, `i18n/locales/`, `types/`, `supabase/migrations/`, `scripts/`
@@ -14,14 +14,14 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
   - Add `scripts/generate-types.sh` and register `"generate-types"` npm script in `package.json`
   - _Requirements: 10.2, 10.4, 10.5_
 
-- [ ] 2. Theme, styles, and i18n foundation
-  - [ ] 2.1 Implement theme tokens and ThemeProvider
+- [x] 2. Theme, styles, and i18n foundation
+  - [x] 2.1 Implement theme tokens and ThemeProvider
     - Create `theme/colors.ts`, `theme/typography.ts`, `theme/spacing.ts`, `theme/shadows.ts`, `theme/index.ts`
     - Create `theme/ThemeProvider.tsx` with `useTheme` hook
     - Create `styles/layout.ts` and `styles/typography.ts`
     - _Requirements: 10.2_
 
-  - [ ] 2.2 Implement i18n setup and RTL helpers
+  - [x] 2.2 Implement i18n setup and RTL helpers
     - Install `i18next` and `react-i18next`
     - Create `i18n/index.ts` with i18next initialization (default locale `'ar'`, fallback `'en'`)
     - Create `i18n/rtl.ts` with `RTL_LANGUAGES` set and `isRTLLanguage` function
@@ -39,8 +39,8 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - For each key in `en.json`, assert `t(key, { lng: locale })` returns a non-empty, non-undefined string for `'ar'` and `'en'`
     - **Validates: Requirements — Multi-language support design**
 
-- [ ] 3. RTL-aware UI primitive wrappers
-  - [ ] 3.1 Implement KView, KText, KTextInput, KScrollView, KSafeAreaView
+- [x] 3. RTL-aware UI primitive wrappers
+  - [x] 3.1 Implement KView, KText, KTextInput, KScrollView, KSafeAreaView
     - Create `components/ui/KView.tsx`, `KText.tsx`, `KTextInput.tsx`, `KScrollView.tsx`, `KSafeAreaView.tsx`
     - Each wrapper reads `isRTL` from `useLocale` and applies correct `direction` / `textAlign` / `writingDirection`
     - Create `components/ui/index.ts` re-exporting all wrappers
@@ -51,21 +51,21 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - _Requirements: 10.2_
 
 - [ ] 4. Database schema migrations
-  - [ ] 4.1 Create migration for `profiles`, `khatmahs`, `khatmah_participants`, and `khatmah_instances` tables
+  - [x] 4.1 Create migration for `profiles`, `khatmahs`, `khatmah_participants`, and `khatmah_instances` tables
     - Write `supabase/migrations/001_initial_schema.sql` expanding all 30 Juz' columns explicitly for `khatmah_instances` (user_id, user_full_name, completed, planb_user_id, planb_user_full_name, help_requested, current_page per Juz')
     - Include `profiles` table with `jazah_total INTEGER NOT NULL DEFAULT 0` and `language TEXT NOT NULL DEFAULT 'ar'`
     - Include `khatmahs` table with all config columns and `invitation_uuid UUID NOT NULL UNIQUE DEFAULT gen_random_uuid()`
     - Include `khatmah_participants` table with composite PK
     - _Requirements: 10.1, 10.3_
 
-  - [ ] 4.2 Create migration for Row-Level Security policies
+  - [x] 4.2 Create migration for Row-Level Security policies
     - Write `supabase/migrations/002_rls_policies.sql`
     - Participants can only read `khatmah_instances` for Khatmahs they belong to (via `khatmah_participants`)
     - Only Creators can update `khatmahs` config columns
     - Users can only update their own `profiles` row
     - _Requirements: 10.3_
 
-  - [ ] 4.3 Create `supabase/seed.sql` with sample data for local development
+  - [x] 4.3 Create `supabase/seed.sql` with sample data for local development
     - Seed at least one Khatmah with participants and an active instance
     - _Requirements: 10.4_
 

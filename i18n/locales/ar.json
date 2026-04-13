@@ -1,0 +1,71 @@
+{
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟",
+    "dontHaveAccount": "ليس لديك حساب؟",
+    "continueWithGoogle": "المتابعة مع Google",
+    "continueWithApple": "المتابعة مع Apple",
+    "emailAlreadyRegistered": "البريد الإلكتروني مسجل بالفعل",
+    "invalidEmail": "صيغة البريد الإلكتروني غير صحيحة",
+    "signInError": "حدث خطأ أثناء تسجيل الدخول"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "myKhatmahs": "ختماتي",
+    "lifetimeJuz": "إجمالي الأجزاء المكتملة",
+    "totalJazah": "إجمالي الجزاء",
+    "quickAction": "إجراء سريع",
+    "noKhatmahs": "لا توجد ختمات بعد",
+    "createFirst": "أنشئ ختمتك الأولى"
+  },
+  "khatmah": {
+    "juz": "الجزء",
+    "complete": "إتمام",
+    "create": "إنشاء ختمة",
+    "name": "اسم الختمة",
+    "lifecycleType": "نوع الدورة",
+    "oneTime": "مرة واحدة",
+    "recurring": "متكررة",
+    "resetCalendar": "تقويم الإعادة",
+    "gregorian": "ميلادي",
+    "islamic": "هجري",
+    "autoRenewal": "التجديد التلقائي",
+    "assignmentMode": "طريقة التوزيع",
+    "manual": "يدوي",
+    "automatic": "تلقائي",
+    "jazahMultiplier": "مضاعف الجزاء",
+    "inviteUrl": "رابط الدعوة",
+    "copyInvite": "نسخ رابط الدعوة",
+    "settings": "الإعدادات",
+    "participants": "المشاركون",
+    "cycleReset": "إعادة تعيين الدورة",
+    "confirmReset": "تأكيد الإعادة",
+    "resetWarning": "سيتم مسح جميع بيانات التقدم الحالية. هل أنت متأكد؟",
+    "newCycle": "دورة جديدة",
+    "completed": "مكتملة",
+    "active": "نشطة"
+  },
+  "juz": {
+    "title": "الجزء {{num}}",
+    "currentPage": "الصفحة الحالية",
+    "updatePage": "تحديث الصفحة",
+    "finishJuz": "إتمام الجزء",
+    "cantRead": "لا أستطيع القراءة",
+    "helpRequested": "طُلب المساعدة",
+    "adopted": "تم التبني",
+    "pageOutOfRange": "رقم الصفحة خارج النطاق المسموح به",
+    "assignedTo": "مُسند إلى",
+    "planBUser": "المستخدم البديل"
+  },
+  "notifications": {
+    "juzCompleted": "{{name}} أتم الجزء {{num}}",
+    "helpRequested": "{{name}} يحتاج مساعدة في الجزء {{num}}",
+    "cycleReset": "بدأت دورة جديدة — جزؤك هو {{num}}",
+    "newAssignment": "تم تعيين الجزء {{num}} إليك"
+  }
+}

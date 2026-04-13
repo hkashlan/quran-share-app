@@ -1,0 +1,71 @@
+{
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
+    "emailAlreadyRegistered": "This email is already registered",
+    "invalidEmail": "Invalid email format",
+    "signInError": "An error occurred while signing in"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myKhatmahs": "My Khatmahs",
+    "lifetimeJuz": "Lifetime Juz' Completed",
+    "totalJazah": "Total Jazah",
+    "quickAction": "Quick Action",
+    "noKhatmahs": "No Khatmahs yet",
+    "createFirst": "Create your first Khatmah"
+  },
+  "khatmah": {
+    "juz": "Juz'",
+    "complete": "Complete",
+    "create": "Create Khatmah",
+    "name": "Khatmah Name",
+    "lifecycleType": "Lifecycle Type",
+    "oneTime": "One-Time",
+    "recurring": "Recurring",
+    "resetCalendar": "Reset Calendar",
+    "gregorian": "Gregorian",
+    "islamic": "Islamic (Hijri)",
+    "autoRenewal": "Auto-Renewal",
+    "assignmentMode": "Assignment Mode",
+    "manual": "Manual",
+    "automatic": "Automatic",
+    "jazahMultiplier": "Jazah Multiplier",
+    "inviteUrl": "Invite URL",
+    "copyInvite": "Copy Invite Link",
+    "settings": "Settings",
+    "participants": "Participants",
+    "cycleReset": "Reset Cycle",
+    "confirmReset": "Confirm Reset",
+    "resetWarning": "All current progress data will be cleared. Are you sure?",
+    "newCycle": "New Cycle",
+    "completed": "Completed",
+    "active": "Active"
+  },
+  "juz": {
+    "title": "Juz' {{num}}",
+    "currentPage": "Current Page",
+    "updatePage": "Update Page",
+    "finishJuz": "Finish Juz'",
+    "cantRead": "I Can't Read",
+    "helpRequested": "Help Requested",
+    "adopted": "Adopted",
+    "pageOutOfRange": "Page number is out of the valid range",
+    "assignedTo": "Assigned to",
+    "planBUser": "Plan-B User"
+  },
+  "notifications": {
+    "juzCompleted": "{{name}} completed Juz' {{num}}",
+    "helpRequested": "{{name}} needs help with Juz' {{num}}",
+    "cycleReset": "A new cycle has started — your Juz' is {{num}}",
+    "newAssignment": "Juz' {{num}} has been assigned to you"
+  }
+}
