@@ -239,18 +239,18 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - For each active Juz' assignment, render a Quick Action button; tapping it calls `Progress_Service.finishJuz`
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 4.5_
 
-- [-] 16. Khatmah detail, settings, and Juz' screens
-  - [ ] 16.1 Implement `app/(app)/khatmah/[id]/index.tsx` (Khatmah detail)
+- [x] 16. Khatmah detail, settings, and Juz' screens
+  - [x] 16.1 Implement `app/(app)/khatmah/[id]/index.tsx` (Khatmah detail)
     - Show all 30 Juz' with assignee names, completion status, and help-requested indicators using `useActiveInstance`
     - Creator controls: trigger automatic distribution, manual assignment, cycle reset (with confirmation dialog)
     - _Requirements: 5.2, 5.3, 5.4, 8.3, 9.4, 9.5_
 
-  - [ ] 16.2 Implement `app/(app)/khatmah/[id]/settings.tsx`
+  - [x] 16.2 Implement `app/(app)/khatmah/[id]/settings.tsx`
     - Display and edit Khatmah config: name, lifecycle, reset calendar, auto-renewal, assignment mode, Jazah Multiplier
     - Show invitation URL with copy/share button
     - _Requirements: 3.6, 4.3, 6.7_
 
-  - [ ] 16.3 Implement `app/(app)/khatmah/[id]/juz/[num].tsx` (Juz' detail)
+  - [x] 16.3 Implement `app/(app)/khatmah/[id]/juz/[num].tsx` (Juz' detail)
     - Display current page via `useJuzProgress`; page number input calls `Progress_Service.updatePage`
     - "Finish Juz'" button calls `Progress_Service.finishJuz`
     - "I Can't Read" toggle calls `Assignment_Service.markHelpRequested`
