@@ -134,8 +134,8 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Test Recurring + auto-renewal starts new cycle; Recurring + no auto-renewal marks completed
     - _Requirements: 3.7, 3.8, 3.9_
 
-- [ ] 9. Assignment_Service
-  - [ ] 9.1 Implement Assignment_Service (`lib/assignment.ts`)
+- [x] 9. Assignment_Service
+  - [x] 9.1 Implement Assignment_Service (`lib/assignment.ts`)
     - `distributeAutomatic(instanceId, mode)`: fetch participants, distribute 30 Juz' using random or sequential round-robin; cap at one primary Juz' per participant when ≥ 30 participants; assign multiple Juz' per participant when < 30 participants; update `khatmah_instances` row with `juz_X_user_id` and `juz_X_user_full_name` for all 30 slots
     - `assignManual`, `markHelpRequested`, `adoptJuz`, `reassignJuz`
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
