@@ -219,15 +219,15 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
 - [ ] 13. Checkpoint — core services complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 14. Custom hooks and real-time subscriptions
-  - [ ] 14.1 Implement `useKhatmahList`, `useKhatmah`, and `useActiveInstance` hooks
+- [x] 14. Custom hooks and real-time subscriptions
+  - [x] 14.1 Implement `useKhatmahList`, `useKhatmah`, and `useActiveInstance` hooks
     - `useKhatmahList()`: call `Khatmah_Service.listForUser`; subscribe to `khatmahs` changes for the user
     - `useKhatmah(id)`: call `Khatmah_Service.getById`; subscribe to `khatmahs` row changes
     - `useActiveInstance(id)`: call `Khatmah_Service.getActiveInstance`; subscribe to `khatmah_instances` row changes scoped to the active instance ID — this is the real-time channel for Juz' completion propagation
     - Implement exponential backoff reconnect; show "reconnecting…" banner on subscription failure
     - _Requirements: 10.6_
 
-  - [ ] 14.2 Implement `useJuzProgress` and `useTotalJazah` hooks
+  - [x] 14.2 Implement `useJuzProgress` and `useTotalJazah` hooks
     - `useJuzProgress(instanceId, n)`: read `juz_X_current_page` from the active instance; update reactively via subscription
     - `useTotalJazah()`: call `Reward_Service.getTotalJazah` for the current user
     - _Requirements: 7.1, 4.5, 2.5_
