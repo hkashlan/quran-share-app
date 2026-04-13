@@ -1,11 +1,9 @@
-version: "3.8"
-
 services:
   db:
     image: supabase/postgres:15.1.0.117
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5434:5432"
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}
       POSTGRES_DB: postgres
@@ -14,7 +12,7 @@ services:
       - ./migrations:/docker-entrypoint-initdb.d
 
   studio:
-    image: supabase/studio:20240101-ce42139
+    image: supabase/studio:latest
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -69,11 +67,11 @@ services:
       GOTRUE_MAILER_URLPATHS_RECOVERY: ${MAILER_URLPATHS_RECOVERY:-/auth/v1/verify}
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: ${MAILER_URLPATHS_EMAIL_CHANGE:-/auth/v1/verify}
       GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${ENABLE_GOOGLE_SIGNUP:-false}
-      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_CLIENT_SECRET}
+      # GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      # GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOTRUE_EXTERNAL_APPLE_ENABLED: ${ENABLE_APPLE_SIGNUP:-false}
-      GOTRUE_EXTERNAL_APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
-      GOTRUE_EXTERNAL_APPLE_SECRET: ${APPLE_CLIENT_SECRET}
+      # GOTRUE_EXTERNAL_APPLE_CLIENT_ID: ${APPLE_CLIENT_ID}
+      # GOTRUE_EXTERNAL_APPLE_SECRET: ${APPLE_CLIENT_SECRET}
     depends_on:
       - db
 
@@ -95,7 +93,7 @@ services:
     environment:
       PORT: 4000
       DB_HOST: db
-      DB_PORT: 5432
+      DB_PORT: 5434
       DB_USER: supabase_admin
       DB_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}
       DB_NAME: postgres
@@ -151,7 +149,7 @@ services:
     environment:
       PG_META_PORT: 8080
       PG_META_DB_HOST: db
-      PG_META_DB_PORT: 5432
+      PG_META_DB_PORT: 5434
       PG_META_DB_NAME: postgres
       PG_META_DB_USER: supabase_admin
       PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-and-long-postgres-password}
