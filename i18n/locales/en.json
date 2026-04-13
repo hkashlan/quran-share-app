@@ -54,7 +54,9 @@
     "resetWarning": "All current progress data will be cleared. Are you sure?",
     "newCycle": "New Cycle",
     "completed": "Completed",
-    "active": "Active"
+    "active": "Active",
+    "error": "An error occurred, please try again",
+    "nameRequired": "Khatmah name is required"
   },
   "juz": {
     "title": "Juz' {{num}}",

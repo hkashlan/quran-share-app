@@ -117,14 +117,14 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Verify `jazah_total` increments by multiplier values 1, 2, 3, 10
     - _Requirements: 4.1, 4.4_
 
-- [ ] 8. Khatmah_Service and creation flow
-  - [ ] 8.1 Implement Khatmah_Service (`lib/khatmah.ts`)
+- [x] 8. Khatmah_Service and creation flow
+  - [x] 8.1 Implement Khatmah_Service (`lib/khatmah.ts`)
     - `create`: insert into `khatmahs` with `creator_id`, default `jazah_multiplier = 1`, auto-generated `invitation_uuid`; also insert creator into `khatmah_participants` and create first `khatmah_instances` row
     - `getById`, `listForUser`, `updateConfig`, `markCompleted`, `getActiveInstance`, `getInstance`
     - `triggerCycleReset`: insert new `khatmah_instances` row with `cycle_number + 1`, all completion/progress fields reset to `false`/`0`
     - _Requirements: 3.1, 3.2, 3.3, 3.6, 3.8, 3.9, 9.1, 9.4_
 
-  - [ ] 8.2 Implement Khatmah creation screen (`app/(app)/khatmah/new.tsx`)
+  - [x] 8.2 Implement Khatmah creation screen (`app/(app)/khatmah/new.tsx`)
     - Form fields: name, lifecycle type, reset calendar (shown only for Recurring), auto-renewal toggle, assignment mode
     - On submit call `Khatmah_Service.create`; navigate to new Khatmah detail on success
     - _Requirements: 3.1, 3.2, 3.3, 3.6_
