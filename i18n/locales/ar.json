@@ -7,11 +7,17 @@
     "confirmPassword": "تأكيد كلمة المرور",
     "forgotPassword": "نسيت كلمة المرور؟",
     "alreadyHaveAccount": "لديك حساب بالفعل؟",
+    "noAccount": "ليس لديك حساب؟",
     "dontHaveAccount": "ليس لديك حساب؟",
+    "signInWithGoogle": "تسجيل الدخول بـ Google",
+    "signInWithApple": "تسجيل الدخول بـ Apple",
     "continueWithGoogle": "المتابعة مع Google",
     "continueWithApple": "المتابعة مع Apple",
+    "emailAlreadyExists": "البريد الإلكتروني مسجل بالفعل",
     "emailAlreadyRegistered": "البريد الإلكتروني مسجل بالفعل",
+    "emailInvalid": "صيغة البريد الإلكتروني غير صحيحة",
     "invalidEmail": "صيغة البريد الإلكتروني غير صحيحة",
+    "error": "حدث خطأ، يرجى المحاولة مجدداً",
     "signInError": "حدث خطأ أثناء تسجيل الدخول"
   },
   "dashboard": {

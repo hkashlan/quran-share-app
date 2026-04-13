@@ -7,11 +7,17 @@
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot Password?",
     "alreadyHaveAccount": "Already have an account?",
+    "noAccount": "Don't have an account?",
     "dontHaveAccount": "Don't have an account?",
+    "signInWithGoogle": "Sign in with Google",
+    "signInWithApple": "Sign in with Apple",
     "continueWithGoogle": "Continue with Google",
     "continueWithApple": "Continue with Apple",
+    "emailAlreadyExists": "This email is already registered",
     "emailAlreadyRegistered": "This email is already registered",
+    "emailInvalid": "Invalid email format",
     "invalidEmail": "Invalid email format",
+    "error": "An error occurred, please try again",
     "signInError": "An error occurred while signing in"
   },
   "dashboard": {

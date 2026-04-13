@@ -69,26 +69,26 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Seed at least one Khatmah with participants and an active instance
     - _Requirements: 10.4_
 
-- [ ] 5. Supabase client and generated types
+- [x] 5. Supabase client and generated types
   - Create `lib/supabase.ts` — typed singleton `createClient<Database>` using `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
   - Run `npm run generate-types` to produce `types/supabase.ts`
   - Create `types/khatmah.ts` with all app-level domain types: `Khatmah`, `KhatmahInstance`, `UserProfile`, and all union type aliases
   - _Requirements: 10.3_
 
-- [ ] 6. Auth_Service and authentication screens
-  - [ ] 6.1 Implement Auth_Service (`lib/auth.ts`)
+- [x] 6. Auth_Service and authentication screens
+  - [x] 6.1 Implement Auth_Service (`lib/auth.ts`)
     - Implement `signUpWithEmail`, `signInWithEmail`, `signInWithOAuth` (google, apple), `signOut`, `getSession`
     - Surface `AuthApiError` with `user_already_exists` code for duplicate email
     - Client-side email format validation before Supabase call
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ] 6.2 Implement `app/(auth)/sign-up.tsx` and `app/(auth)/sign-in.tsx` screens
+  - [x] 6.2 Implement `app/(auth)/sign-up.tsx` and `app/(auth)/sign-in.tsx` screens
     - Sign-up form: email + password fields with inline validation errors
     - Sign-in form: email/password + Google/Apple OAuth buttons
     - Use `KView`, `KText`, `KTextInput` throughout; all strings via `t()`
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ] 6.3 Implement session lifecycle in root layout
+  - [x] 6.3 Implement session lifecycle in root layout
     - Create `hooks/useSession.ts` wrapping `supabase.auth.getSession` and `onAuthStateChange`
     - In `app/(app)/_layout.tsx`: load session, apply locale from `profile.language`, call `I18nManager.forceRTL` if needed, redirect to sign-in on `SIGNED_OUT` event and clear local session data
     - _Requirements: 1.5, 1.6_
