@@ -70,6 +70,16 @@
     "assignedTo": "مُسند إلى",
     "planBUser": "المستخدم البديل"
   },
+  "join": {
+    "loading": "جارٍ التحميل...",
+    "notFound": "الدعوة غير موجودة",
+    "notFoundDesc": "رابط الدعوة غير صالح أو منتهي الصلاحية.",
+    "joinButton": "انضم إلى الختمة",
+    "joining": "جارٍ الانضمام...",
+    "alreadyMember": "أنت بالفعل عضو في هذه الختمة.",
+    "error": "حدث خطأ، يرجى المحاولة مجدداً",
+    "signInToJoin": "سجّل دخولك للانضمام إلى هذه الختمة"
+  },
   "notifications": {
     "juzCompleted": "{{name}} أتم الجزء {{num}}",
     "helpRequested": "{{name}} يحتاج مساعدة في الجزء {{num}}",

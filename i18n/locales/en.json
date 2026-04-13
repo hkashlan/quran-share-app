@@ -70,6 +70,16 @@
     "assignedTo": "Assigned to",
     "planBUser": "Plan-B User"
   },
+  "join": {
+    "loading": "Loading...",
+    "notFound": "Invitation not found",
+    "notFoundDesc": "This invitation link is invalid or has expired.",
+    "joinButton": "Join Khatmah",
+    "joining": "Joining...",
+    "alreadyMember": "You're already a member of this Khatmah.",
+    "error": "An error occurred, please try again",
+    "signInToJoin": "Sign in to join this Khatmah"
+  },
   "notifications": {
     "juzCompleted": "{{name}} completed Juz' {{num}}",
     "helpRequested": "{{name}} needs help with Juz' {{num}}",

@@ -154,14 +154,14 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Verify round-robin for participant counts 1, 15, 30, 31
     - _Requirements: 5.4, 5.6, 5.7_
 
-- [ ] 10. Invitation_Service
-  - [ ] 10.1 Implement Invitation_Service (`lib/invitation.ts`)
+- [x] 10. Invitation_Service
+  - [x] 10.1 Implement Invitation_Service (`lib/invitation.ts`)
     - `getInviteUrl(khatmahId)`: read `invitation_uuid` from `khatmahs`, return `app.com/join/{uuid}`
     - `resolveInvite(uuid)`: query `khatmahs` by `invitation_uuid`; return the Khatmah or throw if not found
     - `joinKhatmah(uuid, userId)`: resolve invite, check `khatmah_participants` for existing row, insert if absent, return `AlreadyMemberError` without insert if already a member
     - _Requirements: 6.1, 6.2, 6.4, 6.6_
 
-  - [ ] 10.2 Implement invitation landing screen (`app/(app)/join/[uuid].tsx`)
+  - [x] 10.2 Implement invitation landing screen (`app/(app)/join/[uuid].tsx`)
     - Display Khatmah name and Join button for authenticated users
     - Redirect unauthenticated users to sign-in, resume join flow on return
     - Show "already a member" message if applicable
