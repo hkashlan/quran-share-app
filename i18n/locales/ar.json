@@ -56,7 +56,19 @@
     "completed": "مكتملة",
     "active": "نشطة",
     "error": "حدث خطأ، يرجى المحاولة مجدداً",
-    "nameRequired": "اسم الختمة مطلوب"
+    "nameRequired": "اسم الختمة مطلوب",
+    "helpAlert": "طُلب المساعدة",
+    "helpAlertMessage": "الأجزاء التالية تحتاج مساعدة:",
+    "adopt": "تبنّ",
+    "reassign": "إعادة تعيين",
+    "cancel": "إلغاء",
+    "unassigned": "غير مُسند",
+    "loading": "جارٍ التحميل...",
+    "notFound": "الختمة غير موجودة",
+    "juzList": "قائمة الأجزاء",
+    "reassignTitle": "إعادة تعيين الجزء {{num}}",
+    "reassignMessage": "أدخل معرّف المستخدم لإعادة تعيين هذا الجزء إليه:",
+    "reassignPlaceholder": "معرّف المستخدم"
   },
   "juz": {
     "title": "الجزء {{num}}",

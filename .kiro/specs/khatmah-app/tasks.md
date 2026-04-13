@@ -201,13 +201,13 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Verify boundary pages accepted and out-of-range pages rejected for each Juz'
     - _Requirements: 7.2, 7.4_
 
-- [ ] 12. "I Can't Read" emergency system
-  - [ ] 12.1 Wire `markHelpRequested`, `adoptJuz`, and `reassignJuz` into the Khatmah detail screen
+- [x] 12. "I Can't Read" emergency system
+  - [x] 12.1 Wire `markHelpRequested`, `adoptJuz`, and `reassignJuz` into the Khatmah detail screen
     - Participant view: show "I Can't Read" toggle on assigned Juz'; call `Assignment_Service.markHelpRequested` on activation
     - Creator view: show alert listing `help_requested` Juz' numbers and participant names; "Adopt" button calls `Assignment_Service.adoptJuz`; in Manual mode, show reassign option calling `Assignment_Service.reassignJuz`
     - _Requirements: 8.1, 8.3, 8.4, 8.5_
 
-  - [ ] 12.2 Implement Plan-B Jazah award logic
+  - [x] 12.2 Implement Plan-B Jazah award logic
     - In `Progress_Service.finishJuz`: if `juz_X_planb_user_id` is set, call `Reward_Service.awardJazah` with the Plan-B User's ID; otherwise award to the primary assignee
     - _Requirements: 8.6_
 

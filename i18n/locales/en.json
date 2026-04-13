@@ -56,7 +56,19 @@
     "completed": "Completed",
     "active": "Active",
     "error": "An error occurred, please try again",
-    "nameRequired": "Khatmah name is required"
+    "nameRequired": "Khatmah name is required",
+    "helpAlert": "Help Requested",
+    "helpAlertMessage": "The following Juz' need help:",
+    "adopt": "Adopt",
+    "reassign": "Reassign",
+    "cancel": "Cancel",
+    "unassigned": "Unassigned",
+    "loading": "Loading...",
+    "notFound": "Khatmah not found",
+    "juzList": "Juz' List",
+    "reassignTitle": "Reassign Juz' {{num}}",
+    "reassignMessage": "Enter the user ID to reassign this Juz' to:",
+    "reassignPlaceholder": "User ID"
   },
   "juz": {
     "title": "Juz' {{num}}",
