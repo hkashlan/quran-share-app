@@ -232,14 +232,14 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - `useTotalJazah()`: call `Reward_Service.getTotalJazah` for the current user
     - _Requirements: 7.1, 4.5, 2.5_
 
-- [ ] 15. Dashboard screen
-  - [ ] 15.1 Implement `app/(app)/index.tsx` (Dashboard)
+- [x] 15. Dashboard screen
+  - [x] 15.1 Implement `app/(app)/index.tsx` (Dashboard)
     - List all Khatmahs via `useKhatmahList`
     - Display lifetime completed Juz' count and total Jazah via `useTotalJazah`
     - For each active Juz' assignment, render a Quick Action button; tapping it calls `Progress_Service.finishJuz`
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 4.5_
 
-- [ ] 16. Khatmah detail, settings, and Juz' screens
+- [-] 16. Khatmah detail, settings, and Juz' screens
   - [ ] 16.1 Implement `app/(app)/khatmah/[id]/index.tsx` (Khatmah detail)
     - Show all 30 Juz' with assignee names, completion status, and help-requested indicators using `useActiveInstance`
     - Creator controls: trigger automatic distribution, manual assignment, cycle reset (with confirmation dialog)
