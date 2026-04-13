@@ -98,12 +98,12 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Test invalid email format is caught client-side without a network call
     - _Requirements: 1.3, 1.4_
 
-- [ ] 7. User profile creation and Reward_Service
-  - [ ] 7.1 Implement automatic profile creation on sign-up
+- [x] 7. User profile creation and Reward_Service
+  - [x] 7.1 Implement automatic profile creation on sign-up
     - Add Supabase trigger or `Auth_Service` post-sign-up call to insert a `profiles` row with `id = auth.users.id`
     - _Requirements: 2.1_
 
-  - [ ] 7.2 Implement Reward_Service (`lib/reward.ts`)
+  - [x] 7.2 Implement Reward_Service (`lib/reward.ts`)
     - `awardJazah(khatmahId, juzNum, userId)`: fetch `jazah_multiplier` from `khatmahs`, then `UPDATE profiles SET jazah_total = jazah_total + multiplier WHERE id = userId`
     - `getTotalJazah(userId)`: single row fetch of `profiles.jazah_total`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_

@@ -133,7 +133,15 @@ export interface Database {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      increment_jazah: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+        }
+        Returns: undefined
+      }
+    }
     Enums: Record<string, never>
   }
 }
