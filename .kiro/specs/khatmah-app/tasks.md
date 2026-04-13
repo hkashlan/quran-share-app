@@ -256,7 +256,7 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - "I Can't Read" toggle calls `Assignment_Service.markHelpRequested`
     - _Requirements: 7.1, 7.2, 7.3, 7.5, 8.1_
 
-- [-] 17. Notification_Service and push notifications
+- [x] 17. Notification_Service and push notifications
   - [x] 17.1 Implement Notification_Service (`lib/notification.ts`)
     - Register device push token with Supabase on login
     - `notifyJuzCompleted(khatmahId, participantName, juzNum)`: send in-app + push notification to all Khatmah participants
@@ -264,14 +264,14 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - `notifyCycleReset(khatmahId, assignments)`: send per-participant notification with new Juz' assignment
     - _Requirements: 7.6, 8.2, 9.3_
 
-  - [-] 17.2 Create Supabase Edge Function for scheduled cycle resets
+  - [x] 17.2 Create Supabase Edge Function for scheduled cycle resets
     - Write `supabase/functions/cycle-reset/index.ts`
     - Query all Recurring Khatmahs whose reset date has passed; call cycle reset logic; dispatch notifications via push gateway
     - Handle Islamic calendar via `intl-hijri` or equivalent; fall back to Gregorian on error
     - _Requirements: 3.4, 3.5, 9.1, 9.2, 9.3_
 
-- [ ] 18. Cycle reset and auto-renewal wiring
-  - [ ] 18.1 Implement cycle reset logic in Khatmah_Service
+- [x] 18. Cycle reset and auto-renewal wiring
+  - [x] 18.1 Implement cycle reset logic in Khatmah_Service
     - `triggerCycleReset`: insert new `khatmah_instances` row with `cycle_number + 1`; if auto-renewal enabled, copy `juz_X_user_id` and `juz_X_user_full_name` values from previous instance; all completion/progress fields start at `false`/`0`
     - If auto-renewal disabled, call `markCompleted` on the Khatmah
     - _Requirements: 3.7, 3.8, 9.1, 9.2_

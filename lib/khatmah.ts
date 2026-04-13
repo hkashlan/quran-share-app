@@ -287,7 +287,30 @@ export async function getInstance(instanceId: string): Promise<KhatmahInstance> 
  * Requirements: 3.8, 3.9, 9.1, 9.4
  */
 export async function triggerCycleReset(id: string): Promise<KhatmahInstance> {
-  // Fetch the current active instance to get the latest cycle_number
+  // Fetch khatmah config to check auto_renewal setting
+  const khatmah = await getById(id)
+
+  // If auto-renewal is disabled, mark the khatmah as completed instead of cycling
+  // Requirements: 3.8
+  if (!khatmah.autoRenewal) {
+    await markCompleted(id)
+    // Return the current (now-completed) instance
+    const currentInstance = await getActiveInstance(id).catch(async () => {
+      // getActiveInstance may fail since we just completed it; fetch by khatmah_id instead
+      const { data, error } = await supabase
+        .from('khatmah_instances')
+        .select('*')
+        .eq('khatmah_id', id)
+        .order('cycle_number', { ascending: false })
+        .limit(1)
+        .single()
+      if (error != null) throw new Error(`Failed to fetch instance: ${error.message}`)
+      return mapInstance(data as Record<string, unknown>)
+    })
+    return currentInstance
+  }
+
+  // Fetch the current active instance to get cycle_number and existing assignments
   const currentInstance = await getActiveInstance(id)
 
   // Mark the current instance as completed
@@ -300,14 +323,24 @@ export async function triggerCycleReset(id: string): Promise<KhatmahInstance> {
     throw new Error(`Failed to close current instance: ${endError.message}`)
   }
 
-  // Insert new instance with incremented cycle_number and all progress reset
+  // Build reset fields (clears completion, progress, help_requested, planb)
   const resetFields = buildResetFields()
+
+  // If auto-renewal is enabled, copy juz assignments from the previous instance
+  // Requirements: 3.7, 9.2
+  const assignmentFields: Record<string, string | null> = {}
+  for (let i = 1; i <= 30; i++) {
+    assignmentFields[`juz_${i}_user_id`]        = currentInstance.juzAssignments[i] ?? null
+    assignmentFields[`juz_${i}_user_full_name`] = currentInstance.juzUserFullNames[i] ?? null
+  }
+
   const { data: newInstance, error: insertError } = await supabase
     .from('khatmah_instances')
     .insert({
       khatmah_id: id,
       cycle_number: currentInstance.cycleNumber + 1,
       ...resetFields,
+      ...assignmentFields,
     })
     .select()
     .single()
