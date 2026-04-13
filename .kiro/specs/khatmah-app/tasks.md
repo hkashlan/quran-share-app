@@ -181,12 +181,12 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - Test idempotency: second join call does not insert duplicate row
     - _Requirements: 6.6_
 
-- [ ] 11. Progress_Service and Juz' page ranges
-  - [ ] 11.1 Implement `lib/juzPages.ts` with `JUZ_PAGE_RANGES` for all 30 Juz'
+- [x] 11. Progress_Service and Juz' page ranges
+  - [x] 11.1 Implement `lib/juzPages.ts` with `JUZ_PAGE_RANGES` for all 30 Juz'
     - Define `{ start, end }` for each Juz' (Juz' 1: pages 1–21, Juz' 30: pages 582–604, etc.)
     - _Requirements: 7.2, 7.4_
 
-  - [ ] 11.2 Implement Progress_Service (`lib/progress.ts`)
+  - [x] 11.2 Implement Progress_Service (`lib/progress.ts`)
     - `getProgress(instanceId, juzNum)`: read `juz_X_current_page` from `khatmah_instances`
     - `updatePage(instanceId, juzNum, page)`: validate page against `JUZ_PAGE_RANGES`; update `juz_X_current_page` if valid; return `ValidationError` without update if out of range
     - `finishJuz(instanceId, juzNum)`: set `juz_X_completed = true`, call `Reward_Service.awardJazah`, trigger notification
