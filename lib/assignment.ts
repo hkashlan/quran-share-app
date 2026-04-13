@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { notifyHelpRequested } from '@/lib/notification'
 
 // ── Interface ─────────────────────────────────────────────────────────────────
 
@@ -137,9 +138,22 @@ export async function assignManual(
 
 /**
  * Flag a Juz' as help-requested (the "I Can't Read" toggle).
- * Requirements: 8.1
+ * Notifies the Khatmah Creator.
+ * Requirements: 8.1, 8.2
  */
 export async function markHelpRequested(instanceId: string, juzNum: number): Promise<void> {
+  // Fetch instance to get khatmah_id and the assignee's name for the notification
+  const userNameCol = `juz_${juzNum}_user_full_name`
+  const { data: instance, error: fetchError } = await supabase
+    .from('khatmah_instances')
+    .select(`khatmah_id, ${userNameCol}`)
+    .eq('id', instanceId)
+    .single()
+
+  if (fetchError != null) {
+    throw new Error(`Failed to fetch instance for help request: ${fetchError.message}`)
+  }
+
   const { error } = await supabase
     .from('khatmah_instances')
     .update({ [`juz_${juzNum}_help_requested`]: true })
@@ -147,6 +161,18 @@ export async function markHelpRequested(instanceId: string, juzNum: number): Pro
 
   if (error != null) {
     throw new Error(`Failed to mark help requested for Juz' ${juzNum}: ${error.message}`)
+  }
+
+  // Notify the Creator (Requirement 8.2)
+  const row = instance as Record<string, unknown>
+  const khatmahId = row['khatmah_id']
+  const participantName =
+    typeof row[userNameCol] === 'string' && (row[userNameCol] as string).length > 0
+      ? (row[userNameCol] as string)
+      : 'A participant'
+
+  if (typeof khatmahId === 'string') {
+    await notifyHelpRequested(khatmahId, participantName, juzNum)
   }
 }
 

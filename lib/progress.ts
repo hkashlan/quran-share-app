@@ -5,6 +5,7 @@
 import { supabase } from '@/lib/supabase'
 import { JUZ_PAGE_RANGES } from '@/lib/juzPages'
 import { awardJazah } from '@/lib/reward'
+import { notifyJuzCompleted } from '@/lib/notification'
 
 // ── Custom error ──────────────────────────────────────────────────────────────
 
@@ -91,20 +92,22 @@ export async function updatePage(
 
 /**
  * Marks the Juz' as completed, awards Jazah to the appropriate user,
- * and triggers a notification (stubbed until Notification_Service is implemented).
- * Requirements: 7.3, 7.5
+ * and notifies all Khatmah participants via Notification_Service.
+ * Requirements: 7.3, 7.5, 7.6
  */
 export async function finishJuz(
   instanceId: string,
   juzNum: number,
 ): Promise<void> {
-  // Fetch the instance row to get khatmah_id and the assignee user IDs
-  const planbCol = `juz_${juzNum}_planb_user_id`
-  const userCol  = `juz_${juzNum}_user_id`
+  // Fetch the instance row to get khatmah_id, assignee user IDs, and display names
+  const planbCol     = `juz_${juzNum}_planb_user_id`
+  const userCol      = `juz_${juzNum}_user_id`
+  const planbNameCol = `juz_${juzNum}_planb_user_full_name`
+  const userNameCol  = `juz_${juzNum}_user_full_name`
 
   const { data: instance, error: fetchError } = await supabase
     .from('khatmah_instances')
-    .select(`khatmah_id, ${userCol}, ${planbCol}`)
+    .select(`khatmah_id, ${userCol}, ${planbCol}, ${userNameCol}, ${planbNameCol}`)
     .eq('id', instanceId)
     .single()
 
@@ -141,9 +144,19 @@ export async function finishJuz(
     await awardJazah(khatmahId, juzNum, awardeeId)
   }
 
-  // Notification stub — Notification_Service not yet implemented (Task 17)
-  console.log(
-    `[Progress_Service] Juz' ${juzNum} completed in instance ${instanceId}. ` +
-    `Notification to participants pending Notification_Service implementation.`,
-  )
+  // Notify all participants that this Juz' was completed (Requirement 7.6)
+  if (typeof khatmahId === 'string') {
+    // Fetch the completer's display name for the notification
+    const nameRow = instance as Record<string, unknown>
+    const planbName = nameRow[planbNameCol]
+    const primaryName = nameRow[userNameCol]
+    const participantName =
+      typeof planbName === 'string' && planbName.length > 0
+        ? planbName
+        : typeof primaryName === 'string' && primaryName.length > 0
+          ? primaryName
+          : 'A participant'
+
+    await notifyJuzCompleted(khatmahId, participantName, juzNum)
+  }
 }

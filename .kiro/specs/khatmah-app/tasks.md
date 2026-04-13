@@ -256,15 +256,15 @@ Incremental implementation of the Khatmah App — a React Native + Expo mobile a
     - "I Can't Read" toggle calls `Assignment_Service.markHelpRequested`
     - _Requirements: 7.1, 7.2, 7.3, 7.5, 8.1_
 
-- [ ] 17. Notification_Service and push notifications
-  - [ ] 17.1 Implement Notification_Service (`lib/notification.ts`)
+- [-] 17. Notification_Service and push notifications
+  - [x] 17.1 Implement Notification_Service (`lib/notification.ts`)
     - Register device push token with Supabase on login
     - `notifyJuzCompleted(khatmahId, participantName, juzNum)`: send in-app + push notification to all Khatmah participants
     - `notifyHelpRequested(khatmahId, participantName, juzNum)`: send notification to Creator
     - `notifyCycleReset(khatmahId, assignments)`: send per-participant notification with new Juz' assignment
     - _Requirements: 7.6, 8.2, 9.3_
 
-  - [ ] 17.2 Create Supabase Edge Function for scheduled cycle resets
+  - [-] 17.2 Create Supabase Edge Function for scheduled cycle resets
     - Write `supabase/functions/cycle-reset/index.ts`
     - Query all Recurring Khatmahs whose reset date has passed; call cycle reset logic; dispatch notifications via push gateway
     - Handle Islamic calendar via `intl-hijri` or equivalent; fall back to Gregorian on error
