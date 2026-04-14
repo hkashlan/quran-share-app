@@ -1,5 +1,13 @@
+import { QueryData } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { notifyHelpRequested } from '@/lib/notification'
+import type { Database } from '@/types/supabase'
+
+type InstanceUpdate = Database['public']['Tables']['khatmah_instances']['Update']
+
+// Query-derived type for reading instance rows
+const instanceSelectQuery = supabase.from('khatmah_instances').select('*').single()
+type InstanceRow = QueryData<typeof instanceSelectQuery>
 
 // ── Interface ─────────────────────────────────────────────────────────────────
 
@@ -88,19 +96,16 @@ export async function distributeAutomatic(
   // For random mode, shuffle the participants array before round-robin
   const ordered: Participant[] = mode === 'random' ? shuffle(participants) : [...participants]
 
-  const update: Record<string, string | null> = {}
+  const update: InstanceUpdate = {}
 
   for (let juz = 1; juz <= 30; juz++) {
-    // When ≥ 30 participants, cap at one Juz' per participant (index = juz - 1)
-    // When < 30 participants, cycle round-robin through the ordered list
     const participantIndex = (juz - 1) % ordered.length
     const participant = ordered[participantIndex]
 
-    // When ≥ 30 participants: index = juz-1 (0..29), each maps to a unique participant.
-    // When < 30 participants: round-robin ensures all 30 Juz' are covered.
-    // In both cases `participant` is always defined since index < ordered.length.
-    update[`juz_${juz}_user_id`] = participant!.userId
-    update[`juz_${juz}_user_full_name`] = participant!.fullName
+    const userIdKey   = `juz_${juz}_user_id`   as keyof InstanceUpdate
+    const nameKey     = `juz_${juz}_user_full_name` as keyof InstanceUpdate
+    ;(update as Record<keyof InstanceUpdate, unknown>)[userIdKey] = participant!.userId
+    ;(update as Record<keyof InstanceUpdate, unknown>)[nameKey]   = participant!.fullName
   }
 
   const { error } = await supabase
@@ -123,12 +128,14 @@ export async function assignManual(
   userId: string,
   userFullName: string,
 ): Promise<void> {
+  const update: InstanceUpdate = {
+    [`juz_${juzNum}_user_id` as keyof InstanceUpdate]:        userId,
+    [`juz_${juzNum}_user_full_name` as keyof InstanceUpdate]: userFullName,
+  } as InstanceUpdate
+
   const { error } = await supabase
     .from('khatmah_instances')
-    .update({
-      [`juz_${juzNum}_user_id`]: userId,
-      [`juz_${juzNum}_user_full_name`]: userFullName,
-    })
+    .update(update)
     .eq('id', instanceId)
 
   if (error != null) {
@@ -142,11 +149,9 @@ export async function assignManual(
  * Requirements: 8.1, 8.2
  */
 export async function markHelpRequested(instanceId: string, juzNum: number): Promise<void> {
-  // Fetch instance to get khatmah_id and the assignee's name for the notification
-  const userNameCol = `juz_${juzNum}_user_full_name`
   const { data: instance, error: fetchError } = await supabase
     .from('khatmah_instances')
-    .select(`khatmah_id, ${userNameCol}`)
+    .select('*')
     .eq('id', instanceId)
     .single()
 
@@ -154,9 +159,13 @@ export async function markHelpRequested(instanceId: string, juzNum: number): Pro
     throw new Error(`Failed to fetch instance for help request: ${fetchError.message}`)
   }
 
+  const helpUpdate: InstanceUpdate = {
+    [`juz_${juzNum}_help_requested` as keyof InstanceUpdate]: true,
+  } as InstanceUpdate
+
   const { error } = await supabase
     .from('khatmah_instances')
-    .update({ [`juz_${juzNum}_help_requested`]: true })
+    .update(helpUpdate)
     .eq('id', instanceId)
 
   if (error != null) {
@@ -164,16 +173,12 @@ export async function markHelpRequested(instanceId: string, juzNum: number): Pro
   }
 
   // Notify the Creator (Requirement 8.2)
-  const row = instance as Record<string, unknown>
-  const khatmahId = row['khatmah_id']
+  const khatmahId = instance.khatmah_id
+  const nameVal   = instance[`juz_${juzNum}_user_full_name` as keyof InstanceRow]
   const participantName =
-    typeof row[userNameCol] === 'string' && (row[userNameCol] as string).length > 0
-      ? (row[userNameCol] as string)
-      : 'A participant'
+    typeof nameVal === 'string' && nameVal.length > 0 ? nameVal : 'A participant'
 
-  if (typeof khatmahId === 'string') {
-    await notifyHelpRequested(khatmahId, participantName, juzNum)
-  }
+  await notifyHelpRequested(khatmahId, participantName, juzNum)
 }
 
 /**
@@ -186,12 +191,14 @@ export async function adoptJuz(
   adopterId: string,
   adopterFullName: string,
 ): Promise<void> {
+  const update: InstanceUpdate = {
+    [`juz_${juzNum}_planb_user_id` as keyof InstanceUpdate]:        adopterId,
+    [`juz_${juzNum}_planb_user_full_name` as keyof InstanceUpdate]: adopterFullName,
+  } as InstanceUpdate
+
   const { error } = await supabase
     .from('khatmah_instances')
-    .update({
-      [`juz_${juzNum}_planb_user_id`]: adopterId,
-      [`juz_${juzNum}_planb_user_full_name`]: adopterFullName,
-    })
+    .update(update)
     .eq('id', instanceId)
 
   if (error != null) {
@@ -209,12 +216,14 @@ export async function reassignJuz(
   newUserId: string,
   newUserFullName: string,
 ): Promise<void> {
+  const update: InstanceUpdate = {
+    [`juz_${juzNum}_user_id` as keyof InstanceUpdate]:        newUserId,
+    [`juz_${juzNum}_user_full_name` as keyof InstanceUpdate]: newUserFullName,
+  } as InstanceUpdate
+
   const { error } = await supabase
     .from('khatmah_instances')
-    .update({
-      [`juz_${juzNum}_user_id`]: newUserId,
-      [`juz_${juzNum}_user_full_name`]: newUserFullName,
-    })
+    .update(update)
     .eq('id', instanceId)
 
   if (error != null) {

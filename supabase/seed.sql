@@ -37,12 +37,12 @@ VALUES
 
 -- ============================================================
 -- Profiles
+-- NOTE: The on_auth_user_created trigger already inserted these rows.
+-- We just update them to set display_name and jazah_total.
 -- ============================================================
-INSERT INTO profiles (id, display_name, language, jazah_total)
-VALUES
-  ('00000000-0000-0000-0000-000000000001', 'أحمد المنصور',  'ar', 5),
-  ('00000000-0000-0000-0000-000000000002', 'فاطمة الزهراء', 'ar', 3),
-  ('00000000-0000-0000-0000-000000000003', 'محمد العمري',   'ar', 2);
+UPDATE profiles SET display_name = 'أحمد المنصور',  jazah_total = 5 WHERE id = '00000000-0000-0000-0000-000000000001';
+UPDATE profiles SET display_name = 'فاطمة الزهراء', jazah_total = 3 WHERE id = '00000000-0000-0000-0000-000000000002';
+UPDATE profiles SET display_name = 'محمد العمري',   jazah_total = 2 WHERE id = '00000000-0000-0000-0000-000000000003';
 
 -- ============================================================
 -- Khatmah

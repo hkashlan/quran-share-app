@@ -74,13 +74,6 @@ export interface AuthError {
   code?: string
 }
 
-export class ValidationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ValidationError'
-  }
-}
-
 export class AlreadyMemberError extends Error {
   constructor() {
     super('User is already a member of this Khatmah')
