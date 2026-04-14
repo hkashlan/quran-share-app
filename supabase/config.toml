@@ -405,5 +405,5 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 
 [auth.external.google]
 enabled = true
-client_id = "GOOGLE_CLIENT_ID_REMOVED"
-secret = "GOOGLE_SECRET_REMOVED"
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
