@@ -1,7 +1,7 @@
 {
   "name": "khatmah-app",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -11,7 +11,7 @@
     "check:deps": "npx expo install --check",
     "check": "npm run typecheck && npm run check:deps",
     "generate-types": "bash scripts/generate-types.sh",
-    "supabase-start": "./scripts/stop-supabase-docker.sh && npx supabase start --debug"
+    "supabase-start": "./scripts/stop-supabase-docker.sh && npx supabase stop && npx supabase start"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

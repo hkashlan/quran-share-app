@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "com.khatmah-app",
     "name": "khatmah-scaffold",
     "slug": "khatmah-scaffold",
     "version": "1.0.0",
@@ -13,9 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.khatmah-app",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.khatmah-app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

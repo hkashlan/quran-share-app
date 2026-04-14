@@ -28,6 +28,7 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
   const retryCountRef = useRef(0)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
   // Track the active instance ID so we can scope the subscription
   const instanceIdRef = useRef<string | null>(null)
 
@@ -44,9 +45,13 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
       return
     }
 
-    let channel: ReturnType<typeof supabase.channel> | null = null
-
     async function fetchAndSubscribe(): Promise<void> {
+      // Remove any existing channel before creating a new one
+      if (channelRef.current != null) {
+        await supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+
       try {
         const data = await Khatmah_Service.getActiveInstance(khatmahId)
         if (!mountedRef.current) return
@@ -69,7 +74,7 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
 
       // Subscribe to this specific khatmah_instances row — scoped to the active instance ID.
       // This is the real-time channel for Juz' completion propagation (Requirement 10.6).
-      channel = supabase
+      channelRef.current = supabase
         .channel(`khatmah-instance-${activeInstanceId}`)
         .on(
           'postgres_changes',
@@ -126,8 +131,9 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
         clearTimeout(retryTimerRef.current)
         retryTimerRef.current = null
       }
-      if (channel != null) {
-        void supabase.removeChannel(channel)
+      if (channelRef.current != null) {
+        void supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
     }
   }, [khatmahId])
