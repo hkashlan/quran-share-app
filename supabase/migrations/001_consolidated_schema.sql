@@ -1,6 +1,6 @@
--- Migration: 001_initial_schema.sql
--- Creates the initial schema for the Khatmah App
--- Tables: profiles, khatmahs, khatmah_participants, khatmah_instances
+-- Consolidated Migration: 001_consolidated_schema.sql
+-- Creates the complete initial schema for the Khatmah App
+-- Combines: initial_schema, rls_policies, profile_trigger, push_tokens
 
 -- ============================================================
 -- profiles
@@ -42,8 +42,8 @@ CREATE TABLE khatmah_participants (
 );
 
 -- ============================================================
--- khatmah_instances  (one row per Cycle)
--- All 30 Juz' columns are expanded explicitly below.
+-- khatmah_instances (one row per Cycle)
+-- All 30 Juz' columns expanded explicitly.
 -- Column groups per Juz' N (1–30):
 --   juz_N_user_id            UUID  — primary assignee
 --   juz_N_user_full_name     TEXT  — frozen at assignment time
@@ -333,3 +333,182 @@ CREATE TABLE khatmah_instances (
 
   UNIQUE (khatmah_id, cycle_number)
 );
+
+-- ============================================================
+-- push_tokens
+-- ============================================================
+CREATE TABLE push_tokens (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  token      TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (user_id, token)
+);
+
+-- ============================================================
+-- Enable RLS on all tables
+-- ============================================================
+ALTER TABLE profiles           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE khatmahs           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE khatmah_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE khatmah_instances  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE push_tokens        ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- profiles RLS policies
+-- ============================================================
+CREATE POLICY "profiles_select_any"
+  ON profiles FOR SELECT
+  USING (true);
+
+CREATE POLICY "profiles_insert_own"
+  ON profiles FOR INSERT
+  WITH CHECK (id = auth.uid());
+
+CREATE POLICY "profiles_update_own"
+  ON profiles FOR UPDATE
+  USING (id = auth.uid())
+  WITH CHECK (id = auth.uid());
+
+-- ============================================================
+-- khatmahs RLS policies
+-- ============================================================
+CREATE POLICY "khatmahs_select_participant"
+  ON khatmahs FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM khatmah_participants
+      WHERE khatmah_participants.khatmah_id = khatmahs.id
+        AND khatmah_participants.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "khatmahs_insert_authenticated"
+  ON khatmahs FOR INSERT
+  WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "khatmahs_update_creator"
+  ON khatmahs FOR UPDATE
+  USING (creator_id = auth.uid())
+  WITH CHECK (creator_id = auth.uid());
+
+-- ============================================================
+-- khatmah_participants RLS policies
+-- ============================================================
+CREATE POLICY "khatmah_participants_select_member"
+  ON khatmah_participants FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM khatmah_participants kp
+      WHERE kp.khatmah_id = khatmah_participants.khatmah_id
+        AND kp.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "khatmah_participants_insert_self"
+  ON khatmah_participants FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "khatmah_participants_delete_creator"
+  ON khatmah_participants FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM khatmahs
+      WHERE khatmahs.id = khatmah_participants.khatmah_id
+        AND khatmahs.creator_id = auth.uid()
+    )
+  );
+
+-- ============================================================
+-- khatmah_instances RLS policies
+-- ============================================================
+CREATE POLICY "khatmah_instances_select_participant"
+  ON khatmah_instances FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM khatmah_participants
+      WHERE khatmah_participants.khatmah_id = khatmah_instances.khatmah_id
+        AND khatmah_participants.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "khatmah_instances_insert_creator"
+  ON khatmah_instances FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM khatmahs
+      WHERE khatmahs.id = khatmah_instances.khatmah_id
+        AND khatmahs.creator_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "khatmah_instances_update_participant"
+  ON khatmah_instances FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM khatmah_participants
+      WHERE khatmah_participants.khatmah_id = khatmah_instances.khatmah_id
+        AND khatmah_participants.user_id = auth.uid()
+    )
+  );
+
+-- ============================================================
+-- push_tokens RLS policies
+-- ============================================================
+CREATE POLICY "push_tokens_select_own"
+  ON push_tokens FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "push_tokens_insert_own"
+  ON push_tokens FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "push_tokens_delete_own"
+  ON push_tokens FOR DELETE
+  USING (user_id = auth.uid());
+
+CREATE POLICY "push_tokens_select_service"
+  ON push_tokens FOR SELECT
+  USING (auth.role() = 'service_role');
+
+-- ============================================================
+-- Triggers and Functions
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, jazah_total, language)
+  VALUES (NEW.id, 0, 'ar');
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
+-- increment_jazah RPC function
+-- Atomically increments profiles.jazah_total by p_amount for a given user.
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.increment_jazah(
+  p_user_id UUID,
+  p_amount  INTEGER
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET jazah_total = jazah_total + p_amount
+  WHERE id = p_user_id;
+END;
+$$;
