@@ -96,6 +96,22 @@
     "signInRequired": "سجّل دخولك للانضمام",
     "signInRequiredDesc": "تحتاج إلى تسجيل الدخول للانضمام إلى هذه الختمة."
   },
+  "nav": {
+    "home": "الرئيسية",
+    "settings": "الإعدادات"
+  },
+  "settings": {
+    "profile": "الملف الشخصي",
+    "displayName": "الاسم المعروض",
+    "theme": "المظهر",
+    "signOut": "تسجيل الخروج",
+    "save": "حفظ",
+    "themeDefault": "افتراضي",
+    "themeDark": "داكن",
+    "themeQuran": "قرآن",
+    "updateSuccess": "تم تحديث الملف الشخصي بنجاح",
+    "updateError": "فشل تحديث الملف الشخصي"
+  },
   "notifications": {
     "juzCompleted": "{{name}} أتم الجزء {{num}}",
     "helpRequested": "{{name}} يحتاج مساعدة في الجزء {{num}}",

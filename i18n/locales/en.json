@@ -97,6 +97,22 @@
     "signInRequired": "Sign in to join",
     "signInRequiredDesc": "You need to sign in to join this Khatmah."
   },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "settings": {
+    "profile": "Profile",
+    "displayName": "Display Name",
+    "theme": "Theme",
+    "signOut": "Sign Out",
+    "save": "Save",
+    "themeDefault": "Default",
+    "themeDark": "Dark",
+    "themeQuran": "Quran",
+    "updateSuccess": "Profile updated successfully",
+    "updateError": "Failed to update profile"
+  },
   "notifications": {
     "juzCompleted": "{{name}} completed Juz' {{num}}",
     "helpRequested": "{{name}} needs help with Juz' {{num}}",

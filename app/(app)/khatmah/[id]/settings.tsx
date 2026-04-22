@@ -28,7 +28,7 @@ export default function KhatmahSettingsScreen() {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
 
-  const { khatmah, loading: khatmahLoading } = useKhatmah(id ?? '')
+  const { data: khatmah, isLoading: khatmahLoading } = useKhatmah(id ?? '')
 
   // Local form state — initialised from khatmah once loaded
   const [name, setName] = useState('')

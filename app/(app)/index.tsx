@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { KView, KText, KSafeAreaView } from '@/components/ui'
 import { useTheme } from '@/theme/ThemeProvider'
+import { useSharedStyles } from '@/hooks/useSharedStyles'
 import { useKhatmahList } from '@/hooks/useKhatmahList'
 import { useActiveInstance } from '@/hooks/useActiveInstance'
 import { useTotalJazah } from '@/hooks/useTotalJazah'
@@ -22,6 +23,7 @@ interface QuickActionCardProps {
 function QuickActionCard({ khatmahId, khatmahName, userId }: QuickActionCardProps) {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
+  const shared = useSharedStyles()
   const { data: instance } = useActiveInstance(khatmahId)
   const finishJuz = useFinishJuz(khatmahId, userId)
 
@@ -48,10 +50,10 @@ function QuickActionCard({ khatmahId, khatmahName, userId }: QuickActionCardProp
   }
 
   return (
-    <KView style={styles.card}>
+    <KView style={[shared.card, styles.cardSpacing]}>
       <KText style={styles.khatmahName}>{khatmahName}</KText>
       {activeJuz.map((juzNum) => (
-        <KView key={juzNum} style={styles.row}>
+        <KView key={juzNum} style={[shared.row, styles.rowSpaced]}>
           <KText style={styles.juzLabel}>
             {t('khatmah.juz')} {juzNum}
           </KText>
@@ -83,17 +85,18 @@ interface KhatmahItemProps {
 function KhatmahItem({ khatmah, onPress }: KhatmahItemProps) {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
+  const shared = useSharedStyles()
   const styles = makeItemStyles(colors, spacing, typography)
 
   return (
     <TouchableOpacity
-      style={styles.item}
+      style={[shared.card, shared.row, styles.itemSpaced]}
       onPress={() => onPress(khatmah.id)}
       accessibilityRole="button"
       accessibilityLabel={khatmah.name}
     >
       <KText style={styles.itemName}>{khatmah.name}</KText>
-      <KText style={styles.itemStatus}>
+      <KText style={shared.mutedText}>
         {khatmah.status === 'active' ? t('khatmah.active') : t('khatmah.completed')}
       </KText>
     </TouchableOpacity>
@@ -105,6 +108,7 @@ function KhatmahItem({ khatmah, onPress }: KhatmahItemProps) {
 export default function DashboardScreen() {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
+  const shared = useSharedStyles()
   const router = useRouter()
   const { session, logout } = useSession()
   const userId = session?.user.id ?? ''
@@ -149,7 +153,7 @@ export default function DashboardScreen() {
       {/* Quick Actions */}
       {activeKhatmahs.length > 0 && userId ? (
         <KView style={styles.section}>
-          <KText style={styles.sectionTitle}>{t('dashboard.quickAction')}</KText>
+          <KText style={shared.sectionTitle}>{t('dashboard.quickAction')}</KText>
           {activeKhatmahs.map((k) => (
             <QuickActionCard
               key={k.id}
@@ -163,7 +167,7 @@ export default function DashboardScreen() {
 
       {/* Khatmahs section header */}
       <KView style={styles.sectionHeader}>
-        <KText style={styles.sectionTitle}>{t('dashboard.myKhatmahs')}</KText>
+        <KText style={shared.sectionTitle}>{t('dashboard.myKhatmahs')}</KText>
         <TouchableOpacity
           onPress={handleCreatePress}
           accessibilityRole="button"
@@ -177,7 +181,7 @@ export default function DashboardScreen() {
 
   if (khatmahsLoading) {
     return (
-      <KSafeAreaView style={styles.safe}>
+      <KSafeAreaView style={shared.screen}>
         <KView style={styles.center}>
           <ActivityIndicator color={colors.primary} />
         </KView>
@@ -186,7 +190,7 @@ export default function DashboardScreen() {
   }
 
   return (
-    <KSafeAreaView style={styles.safe}>
+    <KSafeAreaView style={shared.screen}>
       <KView style={styles.header}>
         <KText style={styles.screenTitle}>{t('dashboard.title')}</KText>
         <TouchableOpacity
@@ -204,7 +208,7 @@ export default function DashboardScreen() {
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={
           <KView style={styles.empty}>
-            <KText style={styles.emptyText}>{t('dashboard.noKhatmahs')}</KText>
+            <KText style={shared.mutedText}>{t('dashboard.noKhatmahs')}</KText>
             <TouchableOpacity
               onPress={handleCreatePress}
               accessibilityRole="button"
@@ -228,7 +232,6 @@ function makeStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    safe: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     header: {
       flexDirection: 'row',
@@ -272,18 +275,12 @@ function makeStyles(
       justifyContent: 'space-between',
       marginBottom: spacing.sm,
     },
-    sectionTitle: {
-      fontSize: typography.fontSizeLG,
-      fontWeight: typography.fontWeightBold,
-      color: colors.text,
-    },
     createLink: {
       fontSize: typography.fontSizeSM,
       color: colors.primary,
       fontWeight: typography.fontWeightMedium,
     },
     empty: { alignItems: 'center', paddingVertical: spacing.xl },
-    emptyText: { fontSize: typography.fontSizeMD, color: colors.textMuted, marginBottom: spacing.sm },
   })
 }
 
@@ -293,25 +290,14 @@ function makeCardStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    card: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
+    // card and row are now from useSharedStyles(); these are card-specific overrides
+    cardSpacing: { marginBottom: spacing.sm },
+    rowSpaced: { justifyContent: 'space-between', marginTop: spacing.xs },
     khatmahName: {
       fontSize: typography.fontSizeMD,
       fontWeight: typography.fontWeightBold,
       color: colors.text,
       marginBottom: spacing.sm,
-    },
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: spacing.xs,
     },
     juzLabel: { fontSize: typography.fontSizeMD, color: colors.text },
     button: {
@@ -337,26 +323,13 @@ function makeItemStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    item: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.border,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
+    // item base (card + row) is now from useSharedStyles(); this adds item-specific overrides
+    itemSpaced: { justifyContent: 'space-between', marginBottom: spacing.sm },
     itemName: {
       fontSize: typography.fontSizeMD,
       fontWeight: typography.fontWeightMedium,
       color: colors.text,
       flex: 1,
-    },
-    itemStatus: {
-      fontSize: typography.fontSizeSM,
-      color: colors.textMuted,
     },
   })
 }

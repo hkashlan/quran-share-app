@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react'
 import { I18nManager } from 'react-native'
-import { Stack } from 'expo-router'
+import { Tabs } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { useTranslation } from 'react-i18next'
 import { useSession } from '@/hooks/useSession'
+import { useTheme } from '@/theme/ThemeProvider'
 import { supabase } from '@/lib/supabase'
 import i18n from '@/i18n'
 import { isRTLLanguage } from '@/i18n/rtl'
@@ -9,6 +12,8 @@ import type { SupportedLocale } from '@/types/khatmah'
 
 export default function AppLayout() {
   const { session } = useSession()
+  const { t } = useTranslation()
+  const { colors } = useTheme()
 
   // Apply locale from user profile once session is available
   useEffect(() => {
@@ -26,7 +31,40 @@ export default function AppLayout() {
       })
   }, [session?.user?.id])
 
-  return <Stack />
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: { backgroundColor: colors.background },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: t('nav.home'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: t('nav.settings'),
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      {/* Nested khatmah screens — hidden from tab bar, tab bar stays visible */}
+      <Tabs.Screen name="khatmah/new" options={{ href: null }} />
+      <Tabs.Screen name="khatmah/[id]/index" options={{ href: null }} />
+      <Tabs.Screen name="khatmah/[id]/settings" options={{ href: null }} />
+      <Tabs.Screen name="khatmah/[id]/juz/[num]" options={{ href: null }} />
+    </Tabs>
+  )
 }
 
 async function applyLocale(language: string) {
