@@ -21,12 +21,11 @@ import { useKhatmah } from '@/hooks/useKhatmah'
 import { fetchParticipants } from '@/lib/assignment'
 import { useDistributeAutomatic } from '@/hooks/mutations/useDistributeAutomatic'
 import { useTriggerCycleReset } from '@/hooks/mutations/useTriggerCycleReset'
-import { useMarkHelpRequested } from '@/hooks/mutations/useMarkHelpRequested'
 import { useAdoptJuz } from '@/hooks/mutations/useAdoptJuz'
 import { useReassignJuz } from '@/hooks/mutations/useReassignJuz'
 import { useAssignManual } from '@/hooks/mutations/useAssignManual'
 import { JuzRow } from '@/components/khatmah/JuzRow'
-import { ReassignModal, ParticipantOption } from '@/components/khatmah/ReassignModal'
+import { ReassignPanel, ParticipantOption } from '@/components/khatmah/ReassignPanel'
 import { KhatmahHeader } from '@/components/khatmah/KhatmahHeader'
 import { ManualHint } from '@/components/khatmah/ManualHint'
 
@@ -39,19 +38,17 @@ export default function KhatmahDetailScreen() {
   const router = useRouter()
   const { session } = useSession()
 
-  const { data: khatmah, isLoading: khatmahLoading, isError: khatmahError } = useKhatmah(id ?? '')
+  const { data: khatmah, isLoading: khatmahLoading } = useKhatmah(id ?? '')
   const { data: instance, isLoading: instanceLoading } = useActiveInstance(id ?? '')
 
   const currentUserId = session?.user?.id ?? null
 
   const distributeAutomatic = useDistributeAutomatic(id ?? '')
   const triggerCycleReset = useTriggerCycleReset(id ?? '', currentUserId ?? '')
-  const markHelpRequested = useMarkHelpRequested(id ?? '')
   const adoptJuz = useAdoptJuz(id ?? '')
   const reassignJuz = useReassignJuz(id ?? '')
   const assignManual = useAssignManual(id ?? '')
 
-  const [reassignModalVisible, setReassignModalVisible] = useState(false)
   const [reassignJuzNum, setReassignJuzNum] = useState<number | null>(null)
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantOption | null>(null)
   const [participants, setParticipants] = useState<ParticipantOption[]>([])
@@ -63,9 +60,9 @@ export default function KhatmahDetailScreen() {
 
   const loading = khatmahLoading || instanceLoading
 
-  // Fetch participants when modal opens
+  // Fetch participants when reassign panel opens
   useEffect(() => {
-    if (reassignModalVisible && instance && participants.length === 0) {
+    if (reassignJuzNum != null && instance && participants.length === 0) {
       setLoadingParticipants(true)
       fetchParticipants(instance.id)
         .then((fetchedParticipants) => {
@@ -80,7 +77,7 @@ export default function KhatmahDetailScreen() {
         })
         .finally(() => setLoadingParticipants(false))
     }
-  }, [reassignModalVisible, instance, participants.length, t])
+  }, [reassignJuzNum, instance, participants.length, t])
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
@@ -112,14 +109,6 @@ export default function KhatmahDetailScreen() {
     )
   }, [id, triggerCycleReset, t])
 
-  const handleCantRead = useCallback((juzNum: number) => {
-    if (!instance) return
-    markHelpRequested.mutate(
-      { instanceId: instance.id, juzNum },
-      { onError: (err) => Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined) },
-    )
-  }, [instance, markHelpRequested, t])
-
   const handleAdopt = useCallback((juzNum: number) => {
     if (!instance || !currentUserId || !session?.user) return
     const adopterName =
@@ -133,9 +122,10 @@ export default function KhatmahDetailScreen() {
   }, [instance, currentUserId, session, adoptJuz, t])
 
   const handleReassign = useCallback((juzNum: number) => {
-    setReassignJuzNum(juzNum)
+    // Toggle: tap again to collapse
+    setReassignJuzNum((prev) => (prev === juzNum ? null : juzNum))
     setSelectedParticipant(null)
-    setReassignModalVisible(true)
+    setParticipants([])
   }, [])
 
   const handleReassignConfirm = useCallback(() => {
@@ -149,9 +139,9 @@ export default function KhatmahDetailScreen() {
       },
       {
         onSuccess: () => {
-          setReassignModalVisible(false)
           setReassignJuzNum(null)
           setSelectedParticipant(null)
+          setParticipants([])
         },
         onError: (err) => Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined),
       },
@@ -169,10 +159,6 @@ export default function KhatmahDetailScreen() {
       { onError: (err) => Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined) },
     )
   }, [instance, currentUserId, session, assignManual, t])
-
-  const handleJuzPress = useCallback((juzNum: number) => {
-    router.push(`/(app)/khatmah/${id}/juz/${juzNum}`)
-  }, [router, id])
 
   const handleSettingsPress = useCallback(() => {
     router.push(`/(app)/khatmah/${id}/settings`)
@@ -240,7 +226,6 @@ export default function KhatmahDetailScreen() {
           const isMyJuz = assignedUserId === currentUserId
           const isUnassigned = assignedUserId == null
           const isActionLoading =
-            (markHelpRequested.isPending && (markHelpRequested.variables as { juzNum: number } | undefined)?.juzNum === juzNum) ||
             (adoptJuz.isPending && (adoptJuz.variables as { juzNum: number } | undefined)?.juzNum === juzNum) ||
             (assignManual.isPending && (assignManual.variables as { juzNum: number } | undefined)?.juzNum === juzNum) ||
             (reassignJuz.isPending && (reassignJuz.variables as { juzNum: number } | undefined)?.juzNum === juzNum)
@@ -257,28 +242,30 @@ export default function KhatmahDetailScreen() {
               isMyJuz={isMyJuz}
               isUnassigned={isUnassigned}
               actionLoading={isActionLoading}
-              onCantRead={() => { handleCantRead(juzNum) }}
+              instanceId={instance.id}
+              khatmahId={id ?? ''}
+              currentUserId={currentUserId ?? ''}
               onAdopt={() => { handleAdopt(juzNum) }}
               onReassign={() => { handleReassign(juzNum) }}
               onSelfAssign={() => { handleSelfAssign(juzNum) }}
-              onPress={() => { handleJuzPress(juzNum) }}
+              reassignPanel={
+                reassignJuzNum === juzNum ? (
+                  <ReassignPanel
+                    participants={participants}
+                    selectedParticipant={selectedParticipant}
+                    loadingParticipants={loadingParticipants}
+                    actionLoading={reassignJuz.isPending}
+                    onSelectParticipant={setSelectedParticipant}
+                    onConfirm={handleReassignConfirm}
+                    onCancel={() => { setReassignJuzNum(null); setSelectedParticipant(null); setParticipants([]) }}
+                  />
+                ) : undefined
+              }
             />
           )
         }}
       />
       <ManualHint visible={isCreator && isManualMode} />
-
-      <ReassignModal
-        visible={reassignModalVisible}
-        juzNum={reassignJuzNum}
-        participants={participants}
-        selectedParticipant={selectedParticipant}
-        loadingParticipants={loadingParticipants}
-        actionLoading={reassignJuz.isPending}
-        onSelectParticipant={setSelectedParticipant}
-        onConfirm={handleReassignConfirm}
-        onCancel={() => setReassignModalVisible(false)}
-      />
     </KSafeAreaView>
   )
 }
