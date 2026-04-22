@@ -1,8 +1,19 @@
 import React, { useEffect } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/theme/ThemeProvider'
 import { useSession } from '@/hooks/useSession'
 import '@/i18n'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 300_000,
+      retry: 2,
+    },
+  },
+})
 
 export default function RootLayout() {
   const { session, loading } = useSession()
@@ -25,8 +36,10 @@ export default function RootLayout() {
   }, [session, loading, segments, router])
 
   return (
-    <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }} />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </ThemeProvider>
+    </QueryClientProvider>
   )
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { StyleSheet, TouchableOpacity, ActivityIndicator, FlatList } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -8,7 +8,7 @@ import { useKhatmahList } from '@/hooks/useKhatmahList'
 import { useActiveInstance } from '@/hooks/useActiveInstance'
 import { useTotalJazah } from '@/hooks/useTotalJazah'
 import { useSession } from '@/hooks/useSession'
-import { finishJuz } from '@/lib/progress'
+import { useFinishJuz } from '@/hooks/mutations/useFinishJuz'
 import type { Khatmah } from '@/types/khatmah'
 
 // ── Quick Action Card ─────────────────────────────────────────────────────────
@@ -22,8 +22,8 @@ interface QuickActionCardProps {
 function QuickActionCard({ khatmahId, khatmahName, userId }: QuickActionCardProps) {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
-  const { instance } = useActiveInstance(khatmahId)
-  const [finishing, setFinishing] = useState<number | null>(null)
+  const { data: instance } = useActiveInstance(khatmahId)
+  const finishJuz = useFinishJuz(khatmahId, userId)
 
   const styles = makeCardStyles(colors, spacing, typography)
 
@@ -43,16 +43,8 @@ function QuickActionCard({ khatmahId, khatmahName, userId }: QuickActionCardProp
 
   if (activeJuz.length === 0) return null
 
-  async function handleFinish(juzNum: number) {
-    if (finishing != null) return
-    setFinishing(juzNum)
-    try {
-      await finishJuz(instance!.id, juzNum)
-    } catch {
-      // error is non-critical for the dashboard; user can retry from Juz' detail
-    } finally {
-      setFinishing(null)
-    }
+  function handleFinish(juzNum: number) {
+    finishJuz.mutate({ instanceId: instance!.id, juzNum })
   }
 
   return (
@@ -64,13 +56,13 @@ function QuickActionCard({ khatmahId, khatmahName, userId }: QuickActionCardProp
             {t('khatmah.juz')} {juzNum}
           </KText>
           <TouchableOpacity
-            style={[styles.button, finishing === juzNum && styles.buttonDisabled]}
+            style={[styles.button, finishJuz.isPending && styles.buttonDisabled]}
             onPress={() => handleFinish(juzNum)}
-            disabled={finishing != null}
+            disabled={finishJuz.isPending}
             accessibilityRole="button"
             accessibilityLabel={`${t('dashboard.quickAction')} ${t('khatmah.juz')} ${juzNum}`}
           >
-            {finishing === juzNum
+            {finishJuz.isPending && (finishJuz.variables as { juzNum: number } | undefined)?.juzNum === juzNum
               ? <ActivityIndicator color={colors.surface} size="small" />
               : <KText style={styles.buttonText}>{t('khatmah.complete')}</KText>
             }
@@ -117,8 +109,8 @@ export default function DashboardScreen() {
   const { session, logout } = useSession()
   const userId = session?.user.id ?? ''
 
-  const { khatmahs, loading: khatmahsLoading, reconnecting } = useKhatmahList()
-  const { totalJazah, loading: jazahLoading } = useTotalJazah()
+  const { data: khatmahs = [], isLoading: khatmahsLoading } = useKhatmahList()
+  const { data: totalJazah, isLoading: jazahLoading } = useTotalJazah()
 
   const styles = makeStyles(colors, spacing, typography)
 
@@ -144,18 +136,11 @@ export default function DashboardScreen() {
 
   const ListHeader = (
     <KView>
-      {/* Reconnecting banner */}
-      {reconnecting ? (
-        <KView style={styles.reconnectBanner}>
-          <KText style={styles.reconnectText}>{t('khatmah.loading')}</KText>
-        </KView>
-      ) : null}
-
       {/* Stats row */}
       <KView style={styles.statsRow}>
         <KView style={styles.statCard}>
           <KText style={styles.statValue}>
-            {jazahLoading ? '—' : String(totalJazah)}
+            {jazahLoading || totalJazah == null ? '—' : String(totalJazah)}
           </KText>
           <KText style={styles.statLabel}>{t('dashboard.totalJazah')}</KText>
         </KView>
@@ -264,14 +249,6 @@ function makeStyles(
       fontWeight: typography.fontWeightMedium,
     },
     listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-    reconnectBanner: {
-      backgroundColor: colors.border,
-      padding: spacing.sm,
-      borderRadius: 6,
-      marginBottom: spacing.sm,
-      alignItems: 'center',
-    },
-    reconnectText: { fontSize: typography.fontSizeSM, color: colors.textMuted },
     statsRow: { flexDirection: 'row', marginBottom: spacing.lg },
     statCard: {
       flex: 1,

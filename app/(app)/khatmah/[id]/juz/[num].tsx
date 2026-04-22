@@ -19,9 +19,10 @@ import { useTheme } from '@/theme/ThemeProvider'
 import { useSession } from '@/hooks/useSession'
 import { useActiveInstance } from '@/hooks/useActiveInstance'
 import { useJuzProgress } from '@/hooks/useJuzProgress'
-import { updatePage, finishJuz } from '@/lib/progress'
-import { markHelpRequested } from '@/lib/assignment'
 import { ValidationError } from '@/lib/progress'
+import { useUpdatePage } from '@/hooks/mutations/useUpdatePage'
+import { useFinishJuz } from '@/hooks/mutations/useFinishJuz'
+import { useMarkHelpRequested } from '@/hooks/mutations/useMarkHelpRequested'
 
 export default function JuzDetailScreen() {
   const { id, num } = useLocalSearchParams<{ id: string; num: string }>()
@@ -32,22 +33,23 @@ export default function JuzDetailScreen() {
   const juzNum = parseInt(num ?? '1', 10)
   const safeJuzNum = isNaN(juzNum) || juzNum < 1 || juzNum > 30 ? 1 : juzNum
 
-  const { instance, loading: instanceLoading, refresh } = useActiveInstance(id ?? '')
-  const { currentPage, loading: pageLoading } = useJuzProgress(instance?.id ?? '', safeJuzNum)
+  const { data: instance, isLoading: instanceLoading } = useActiveInstance(id ?? '')
+  const { data: currentPage, isLoading: pageLoading } = useJuzProgress(instance?.id ?? '', safeJuzNum)
 
   const [pageInput, setPageInput] = useState('')
   const [pageError, setPageError] = useState<string | null>(null)
-  const [updatingPage, setUpdatingPage] = useState(false)
-  const [finishing, setFinishing] = useState(false)
-  const [markingHelp, setMarkingHelp] = useState(false)
 
   const styles = makeStyles(colors, spacing, typography)
 
   const currentUserId = session?.user?.id ?? null
 
+  const updatePage = useUpdatePage(instance?.id ?? '', safeJuzNum)
+  const finishJuz = useFinishJuz(id ?? '', currentUserId ?? '')
+  const markHelpRequested = useMarkHelpRequested(id ?? '')
+
   // Sync page input when currentPage loads
   useEffect(() => {
-    if (!pageLoading && currentPage > 0) {
+    if (!pageLoading && currentPage != null && currentPage > 0) {
       setPageInput(String(currentPage))
     }
   }, [currentPage, pageLoading])
@@ -65,7 +67,7 @@ export default function JuzDetailScreen() {
 
   // ── Actions ─────────────────────────────────────────────────────────────────
 
-  async function handleUpdatePage() {
+  function handleUpdatePage() {
     if (!instance) return
     setPageError(null)
 
@@ -75,22 +77,18 @@ export default function JuzDetailScreen() {
       return
     }
 
-    setUpdatingPage(true)
-    try {
-      await updatePage(instance.id, safeJuzNum, page)
-      refresh()
-    } catch (err) {
-      if (err instanceof ValidationError) {
-        setPageError(t('juz.pageOutOfRange'))
-      } else {
-        setPageError(err instanceof Error ? err.message : t('khatmah.error'))
-      }
-    } finally {
-      setUpdatingPage(false)
-    }
+    updatePage.mutate(page, {
+      onError: (err) => {
+        if (err instanceof ValidationError) {
+          setPageError(t('juz.pageOutOfRange'))
+        } else {
+          setPageError(err instanceof Error ? err.message : t('khatmah.error'))
+        }
+      },
+    })
   }
 
-  async function handleFinishJuz() {
+  function handleFinishJuz() {
     if (!instance) return
     Alert.alert(
       t('juz.finishJuz'),
@@ -99,33 +97,31 @@ export default function JuzDetailScreen() {
         { text: t('khatmah.cancel'), style: 'cancel' },
         {
           text: t('juz.finishJuz'),
-          onPress: async () => {
-            setFinishing(true)
-            try {
-              await finishJuz(instance.id, safeJuzNum)
-              refresh()
-            } catch (err) {
-              Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
-            } finally {
-              setFinishing(false)
-            }
+          onPress: () => {
+            finishJuz.mutate(
+              { instanceId: instance.id, juzNum: safeJuzNum },
+              {
+                onError: (err) => {
+                  Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
+                },
+              },
+            )
           },
         },
       ],
     )
   }
 
-  async function handleMarkHelpRequested() {
+  function handleMarkHelpRequested() {
     if (!instance) return
-    setMarkingHelp(true)
-    try {
-      await markHelpRequested(instance.id, safeJuzNum)
-      refresh()
-    } catch (err) {
-      Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
-    } finally {
-      setMarkingHelp(false)
-    }
+    markHelpRequested.mutate(
+      { instanceId: instance.id, juzNum: safeJuzNum },
+      {
+        onError: (err) => {
+          Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
+        },
+      },
+    )
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -180,7 +176,7 @@ export default function JuzDetailScreen() {
         {/* Current page display */}
         <KView style={styles.pageCard}>
           <KText style={styles.pageLabel}>{t('juz.currentPage')}</KText>
-          <KText style={styles.pageValue}>{currentPage > 0 ? String(currentPage) : '—'}</KText>
+          <KText style={styles.pageValue}>{currentPage != null && currentPage > 0 ? String(currentPage) : '—'}</KText>
         </KView>
 
         {/* Page update — only for assigned user on incomplete Juz' */}
@@ -201,13 +197,13 @@ export default function JuzDetailScreen() {
                 accessibilityLabel={t('juz.updatePage')}
               />
               <TouchableOpacity
-                style={[styles.updateBtn, updatingPage && styles.btnDisabled]}
-                onPress={() => { void handleUpdatePage() }}
-                disabled={updatingPage}
+                style={[styles.updateBtn, updatePage.isPending && styles.btnDisabled]}
+                onPress={handleUpdatePage}
+                disabled={updatePage.isPending}
                 accessibilityRole="button"
                 accessibilityLabel={t('juz.updatePage')}
               >
-                {updatingPage
+                {updatePage.isPending
                   ? <ActivityIndicator size="small" color={colors.surface} />
                   : <KText style={styles.updateBtnText}>{t('juz.updatePage')}</KText>
                 }
@@ -220,13 +216,13 @@ export default function JuzDetailScreen() {
         {/* Finish Juz' — only for assigned user on incomplete Juz' */}
         {isMyJuz && !isCompleted ? (
           <TouchableOpacity
-            style={[styles.finishBtn, finishing && styles.btnDisabled]}
-            onPress={() => { void handleFinishJuz() }}
-            disabled={finishing}
+            style={[styles.finishBtn, finishJuz.isPending && styles.btnDisabled]}
+            onPress={handleFinishJuz}
+            disabled={finishJuz.isPending}
             accessibilityRole="button"
             accessibilityLabel={t('juz.finishJuz')}
           >
-            {finishing
+            {finishJuz.isPending
               ? <ActivityIndicator color={colors.surface} />
               : <KText style={styles.finishBtnText}>{t('juz.finishJuz')}</KText>
             }
@@ -236,13 +232,13 @@ export default function JuzDetailScreen() {
         {/* "I Can't Read" — only for assigned user on incomplete, non-help-requested Juz' */}
         {isMyJuz && !isCompleted && !isHelpRequested ? (
           <TouchableOpacity
-            style={[styles.cantReadBtn, markingHelp && styles.btnDisabled]}
-            onPress={() => { void handleMarkHelpRequested() }}
-            disabled={markingHelp}
+            style={[styles.cantReadBtn, markHelpRequested.isPending && styles.btnDisabled]}
+            onPress={handleMarkHelpRequested}
+            disabled={markHelpRequested.isPending}
             accessibilityRole="button"
             accessibilityLabel={t('juz.cantRead')}
           >
-            {markingHelp
+            {markHelpRequested.isPending
               ? <ActivityIndicator color={colors.error} />
               : <KText style={styles.cantReadText}>{t('juz.cantRead')}</KText>
             }
