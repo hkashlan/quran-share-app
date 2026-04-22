@@ -18,7 +18,8 @@
     "emailInvalid": "صيغة البريد الإلكتروني غير صحيحة",
     "invalidEmail": "صيغة البريد الإلكتروني غير صحيحة",
     "error": "حدث خطأ، يرجى المحاولة مجدداً",
-    "signInError": "حدث خطأ أثناء تسجيل الدخول"
+    "signInError": "حدث خطأ أثناء تسجيل الدخول",
+    "logout": "تسجيل الخروج"
   },
   "dashboard": {
     "title": "لوحة التحكم",
@@ -68,7 +69,8 @@
     "juzList": "قائمة الأجزاء",
     "reassignTitle": "إعادة تعيين الجزء {{num}}",
     "reassignMessage": "أدخل معرّف المستخدم لإعادة تعيين هذا الجزء إليه:",
-    "reassignPlaceholder": "معرّف المستخدم"
+    "reassignPlaceholder": "معرّف المستخدم",
+    "noParticipants": "لا توجد مشاركون متاحون"
   },
   "juz": {
     "title": "الجزء {{num}}",
@@ -76,6 +78,7 @@
     "updatePage": "تحديث الصفحة",
     "finishJuz": "إتمام الجزء",
     "cantRead": "لا أستطيع القراءة",
+    "selfAssign": "أسند إليّ",
     "helpRequested": "طُلب المساعدة",
     "adopted": "تم التبني",
     "pageOutOfRange": "رقم الصفحة خارج النطاق المسموح به",
@@ -90,7 +93,8 @@
     "joining": "جارٍ الانضمام...",
     "alreadyMember": "أنت بالفعل عضو في هذه الختمة.",
     "error": "حدث خطأ، يرجى المحاولة مجدداً",
-    "signInToJoin": "سجّل دخولك للانضمام إلى هذه الختمة"
+    "signInRequired": "سجّل دخولك للانضمام",
+    "signInRequiredDesc": "تحتاج إلى تسجيل الدخول للانضمام إلى هذه الختمة."
   },
   "notifications": {
     "juzCompleted": "{{name}} أتم الجزء {{num}}",

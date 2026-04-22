@@ -18,7 +18,8 @@
     "emailInvalid": "Invalid email format",
     "invalidEmail": "Invalid email format",
     "error": "An error occurred, please try again",
-    "signInError": "An error occurred while signing in"
+    "signInError": "An error occurred while signing in",
+    "logout": "Logout"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -67,8 +68,10 @@
     "notFound": "Khatmah not found",
     "juzList": "Juz' List",
     "reassignTitle": "Reassign Juz' {{num}}",
-    "reassignMessage": "Enter the user ID to reassign this Juz' to:",
-    "reassignPlaceholder": "User ID"
+    "reassignMessage": "Select a participant to reassign this Juz' to:",
+    "reassignPlaceholder": "User ID",
+    "noParticipants": "No participants available",
+    "noParticipants": "No participants available"
   },
   "juz": {
     "title": "Juz' {{num}}",
@@ -76,6 +79,7 @@
     "updatePage": "Update Page",
     "finishJuz": "Finish Juz'",
     "cantRead": "I Can't Read",
+    "selfAssign": "Assign to Me",
     "helpRequested": "Help Requested",
     "adopted": "Adopted",
     "pageOutOfRange": "Page number is out of the valid range",
@@ -90,7 +94,8 @@
     "joining": "Joining...",
     "alreadyMember": "You're already a member of this Khatmah.",
     "error": "An error occurred, please try again",
-    "signInToJoin": "Sign in to join this Khatmah"
+    "signInRequired": "Sign in to join",
+    "signInRequiredDesc": "You need to sign in to join this Khatmah."
   },
   "notifications": {
     "juzCompleted": "{{name}} completed Juz' {{num}}",

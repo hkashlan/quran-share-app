@@ -16,6 +16,7 @@ type ScreenState =
   | { status: 'already_member'; khatmah: Khatmah }
   | { status: 'joined'; khatmah: Khatmah }
   | { status: 'error'; message: string }
+  | { status: 'not_authenticated' }
 
 export default function JoinScreen() {
   const { uuid } = useLocalSearchParams<{ uuid: string }>()
@@ -61,6 +62,10 @@ export default function JoinScreen() {
     }
   }
 
+  function handleSignIn() {
+    router.push('/(auth)/sign-in')
+  }
+
   const styles = makeStyles(theme)
 
   if (state.status === 'loading') {
@@ -95,46 +100,73 @@ export default function JoinScreen() {
     )
   }
 
-  const khatmah = state.khatmah
-
-  return (
-    <KSafeAreaView style={styles.safe}>
-      <KScrollView contentContainerStyle={styles.container}>
-        <KView style={styles.card}>
-          <KText style={styles.khatmahName}>{khatmah.name}</KText>
-
-          {state.status === 'already_member' && (
-            <KView style={styles.messageBanner}>
-              <KText style={styles.messageText}>{t('join.alreadyMember')}</KText>
-            </KView>
-          )}
-
-          {state.status === 'joined' && (
-            <KView style={[styles.messageBanner, styles.successBanner]}>
-              <KText style={[styles.messageText, styles.successText]}>
-                {t('join.joining')}
-              </KText>
-            </KView>
-          )}
-
-          {state.status === 'ready' && (
+  if (!session?.user) {
+    // User is not authenticated
+    return (
+      <KSafeAreaView style={styles.safe}>
+        <KScrollView contentContainerStyle={styles.container}>
+          <KView style={styles.card}>
+            <KText style={styles.title}>{t('join.signInRequired')}</KText>
+            <KText style={styles.subtitle}>{t('join.signInRequiredDesc')}</KText>
             <TouchableOpacity
-              style={[styles.joinButton, joining && styles.joinButtonDisabled]}
-              onPress={handleJoin}
-              disabled={joining}
+              style={styles.signInButton}
+              onPress={handleSignIn}
               accessibilityRole="button"
-              accessibilityLabel={t('join.joinButton')}
+              accessibilityLabel={t('auth.signIn')}
             >
-              {joining
-                ? <ActivityIndicator color={theme.colors.surface} />
-                : <KText style={styles.joinButtonText}>{t('join.joinButton')}</KText>
-              }
+              <KText style={styles.signInButtonText}>{t('auth.signIn')}</KText>
             </TouchableOpacity>
-          )}
-        </KView>
-      </KScrollView>
-    </KSafeAreaView>
-  )
+          </KView>
+        </KScrollView>
+      </KSafeAreaView>
+    )
+  }
+
+  if (state.status === 'ready' || state.status === 'already_member' || state.status === 'joined') {
+    const khatmah = state.khatmah
+
+    return (
+      <KSafeAreaView style={styles.safe}>
+        <KScrollView contentContainerStyle={styles.container}>
+          <KView style={styles.card}>
+            <KText style={styles.khatmahName}>{khatmah.name}</KText>
+
+            {state.status === 'already_member' && (
+              <KView style={styles.messageBanner}>
+                <KText style={styles.messageText}>{t('join.alreadyMember')}</KText>
+              </KView>
+            )}
+
+            {state.status === 'joined' && (
+              <KView style={[styles.messageBanner, styles.successBanner]}>
+                <KText style={[styles.messageText, styles.successText]}>
+                  {t('join.joining')}
+                </KText>
+              </KView>
+            )}
+
+            {state.status === 'ready' && (
+              <TouchableOpacity
+                style={[styles.joinButton, joining && styles.joinButtonDisabled]}
+                onPress={handleJoin}
+                disabled={joining}
+                accessibilityRole="button"
+                accessibilityLabel={t('join.joinButton')}
+              >
+                {joining
+                  ? <ActivityIndicator color={theme.colors.surface} />
+                  : <KText style={styles.joinButtonText}>{t('join.joinButton')}</KText>
+                }
+              </TouchableOpacity>
+            )}
+          </KView>
+        </KScrollView>
+      </KSafeAreaView>
+    )
+  }
+
+  // For all other states (loading, not_found, error)
+  return null
 }
 
 function makeStyles(theme: ReturnType<typeof useTheme>) {
@@ -176,6 +208,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       fontSize: typography.fontSizeMD,
       color: colors.textMuted,
       textAlign: 'center',
+      marginBottom: spacing.lg,
     },
     messageBanner: {
       backgroundColor: colors.border,
@@ -199,6 +232,17 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
     },
     joinButtonDisabled: { opacity: 0.6 },
     joinButtonText: {
+      color: colors.surface,
+      fontSize: typography.fontSizeMD,
+      fontWeight: typography.fontWeightBold,
+    },
+    signInButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 8,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+    },
+    signInButtonText: {
       color: colors.surface,
       fontSize: typography.fontSizeMD,
       fontWeight: typography.fontWeightBold,

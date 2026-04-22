@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
 export interface UseSessionResult {
   session: Session | null
   loading: boolean
+  logout: () => Promise<void>
 }
 
 export function useSession(): UseSessionResult {
@@ -28,5 +29,9 @@ export function useSession(): UseSessionResult {
     }
   }, [])
 
-  return { session, loading }
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
+  }, [])
+
+  return { session, loading, logout }
 }

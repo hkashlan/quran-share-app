@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KhatmahInstance } from '@/types/khatmah'
 import * as Khatmah_Service from '@/lib/khatmah'
 import { supabase } from '@/lib/supabase'
@@ -11,6 +11,7 @@ export interface UseActiveInstanceResult {
   loading: boolean
   error: Error | null
   reconnecting: boolean
+  refresh: () => void
 }
 
 /**
@@ -29,8 +30,19 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
-  // Track the active instance ID so we can scope the subscription
   const instanceIdRef = useRef<string | null>(null)
+  // Keep a ref to khatmahId so refresh() always uses the latest value
+  const khatmahIdRef = useRef(khatmahId)
+  useEffect(() => { khatmahIdRef.current = khatmahId }, [khatmahId])
+
+  const refresh = useCallback((): void => {
+    const kid = khatmahIdRef.current
+    if (!kid) return
+    Khatmah_Service.getActiveInstance(kid).then((data) => {
+      setInstance(data)
+      instanceIdRef.current = data.id
+    }).catch(() => { /* ignore */ })
+  }, [])
 
   useEffect(() => {
     mountedRef.current = true
@@ -74,8 +86,10 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
 
       // Subscribe to this specific khatmah_instances row — scoped to the active instance ID.
       // This is the real-time channel for Juz' completion propagation (Requirement 10.6).
+      // Use a unique channel name with a timestamp to avoid reusing old subscriptions
+      const channelName = `khatmah-instance-${activeInstanceId}-${Date.now()}`
       channelRef.current = supabase
-        .channel(`khatmah-instance-${activeInstanceId}`)
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -87,7 +101,7 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
           () => {
             if (!mountedRef.current) return
             // Re-fetch the full mapped domain object on any update
-            Khatmah_Service.getActiveInstance(khatmahId).then((data) => {
+            Khatmah_Service.getActiveInstance(khatmahIdRef.current).then((data) => {
               if (mountedRef.current) {
                 setInstance(data)
                 instanceIdRef.current = data.id
@@ -138,5 +152,5 @@ export function useActiveInstance(khatmahId: string): UseActiveInstanceResult {
     }
   }, [khatmahId])
 
-  return { instance, loading, error, reconnecting }
+  return { instance, loading, error, reconnecting, refresh }
 }

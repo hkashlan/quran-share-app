@@ -4,15 +4,14 @@
  * Creator controls: automatic distribution, manual assignment, cycle reset (with confirmation).
  * Requirements: 5.2, 5.3, 5.4, 8.3, 9.4, 9.5
  */
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  TouchableOpacity,
   FlatList,
 } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import { KView, KText, KSafeAreaView } from '@/components/ui'
 import { useTheme } from '@/theme/ThemeProvider'
@@ -25,113 +24,14 @@ import {
   adoptJuz,
   reassignJuz,
   markHelpRequested,
+  fetchParticipants,
 } from '@/lib/assignment'
 import { triggerCycleReset } from '@/lib/khatmah'
-
-// ── Juz' row item ─────────────────────────────────────────────────────────────
-
-interface JuzRowProps {
-  juzNum: number
-  assignedName: string
-  planbName: string | null
-  isCompleted: boolean
-  isHelpRequested: boolean
-  isCreator: boolean
-  isManualMode: boolean
-  isMyJuz: boolean
-  actionLoading: boolean
-  onCantRead: () => void
-  onAdopt: () => void
-  onReassign: () => void
-  onPress: () => void
-}
-
-function JuzRow({
-  juzNum,
-  assignedName,
-  planbName,
-  isCompleted,
-  isHelpRequested,
-  isCreator,
-  isManualMode,
-  isMyJuz,
-  actionLoading,
-  onCantRead,
-  onAdopt,
-  onReassign,
-  onPress,
-}: JuzRowProps) {
-  const { t } = useTranslation()
-  const { colors, spacing, typography } = useTheme()
-  const styles = makeRowStyles(colors, spacing, typography)
-
-  return (
-    <TouchableOpacity
-      style={[styles.row, isCompleted && styles.rowCompleted]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={t('juz.title', { num: juzNum })}
-    >
-      <KView style={styles.info}>
-        <KText style={styles.juzNum}>{t('juz.title', { num: juzNum })}</KText>
-        <KText style={styles.assignee}>{assignedName}</KText>
-        {planbName != null ? (
-          <KText style={styles.planb}>{`${t('juz.planBUser')}: ${planbName}`}</KText>
-        ) : null}
-        {isCompleted ? (
-          <KText style={styles.completedBadge}>{t('khatmah.completed')}</KText>
-        ) : null}
-        {isHelpRequested && !isCompleted ? (
-          <KText style={styles.helpBadge}>{t('juz.helpRequested')}</KText>
-        ) : null}
-      </KView>
-
-      {/* Participant: "I Can't Read" button on their own incomplete Juz' */}
-      {!isCreator && isMyJuz && !isCompleted && !isHelpRequested ? (
-        actionLoading ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <TouchableOpacity
-            style={styles.cantReadBtn}
-            onPress={onCantRead}
-            accessibilityRole="button"
-            accessibilityLabel={t('juz.cantRead')}
-          >
-            <KText style={styles.cantReadText}>{t('juz.cantRead')}</KText>
-          </TouchableOpacity>
-        )
-      ) : null}
-
-      {/* Creator: adopt / reassign for help-requested Juz' */}
-      {isCreator && isHelpRequested && !isCompleted ? (
-        actionLoading ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <KView style={styles.creatorActions}>
-            <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={onAdopt}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('khatmah.adopt')} ${t('juz.title', { num: juzNum })}`}
-            >
-              <KText style={styles.actionBtnText}>{t('khatmah.adopt')}</KText>
-            </TouchableOpacity>
-            {isManualMode ? (
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.actionBtnOutline]}
-                onPress={onReassign}
-                accessibilityRole="button"
-                accessibilityLabel={`${t('khatmah.reassign')} ${t('juz.title', { num: juzNum })}`}
-              >
-                <KText style={styles.actionBtnOutlineText}>{t('khatmah.reassign')}</KText>
-              </TouchableOpacity>
-            ) : null}
-          </KView>
-        )
-      ) : null}
-    </TouchableOpacity>
-  )
-}
+import { JuzRow } from '@/components/khatmah/JuzRow'
+import { ReassignModal, ParticipantOption } from '@/components/khatmah/ReassignModal'
+import { KhatmahHeader } from '@/components/khatmah/KhatmahHeader'
+import { ReconnectBanner } from '@/components/khatmah/ReconnectBanner'
+import { ManualHint } from '@/components/khatmah/ManualHint'
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -143,11 +43,16 @@ export default function KhatmahDetailScreen() {
   const { session } = useSession()
 
   const { khatmah, loading: khatmahLoading } = useKhatmah(id ?? '')
-  const { instance, loading: instanceLoading, reconnecting } = useActiveInstance(id ?? '')
+  const { instance, loading: instanceLoading, reconnecting, refresh } = useActiveInstance(id ?? '')
 
   const [actionLoading, setActionLoading] = useState<number | null>(null)
   const [distributing, setDistributing] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [reassignModalVisible, setReassignModalVisible] = useState(false)
+  const [reassignJuzNum, setReassignJuzNum] = useState<number | null>(null)
+  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantOption | null>(null)
+  const [participants, setParticipants] = useState<ParticipantOption[]>([])
+  const [loadingParticipants, setLoadingParticipants] = useState(false)
 
   const styles = makeStyles(colors, spacing, typography)
 
@@ -157,6 +62,32 @@ export default function KhatmahDetailScreen() {
 
   const loading = khatmahLoading || instanceLoading
 
+  // Refresh instance data when screen comes back into focus (e.g. returning from juz detail)
+  useFocusEffect(
+    useCallback(() => {
+      refresh()
+    }, [refresh]),
+  )
+
+  // Fetch participants when modal opens
+  useEffect(() => {
+    if (reassignModalVisible && instance && participants.length === 0) {
+      setLoadingParticipants(true)
+      fetchParticipants(instance.id)
+        .then((fetchedParticipants) => {
+          const options: ParticipantOption[] = fetchedParticipants.map((p) => ({
+            userId: p.userId,
+            fullName: p.fullName,
+          }))
+          setParticipants(options)
+        })
+        .catch((err) => {
+          Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
+        })
+        .finally(() => setLoadingParticipants(false))
+    }
+  }, [reassignModalVisible, instance, participants.length, t])
+
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   const handleDistributeAutomatic = useCallback(async () => {
@@ -164,33 +95,13 @@ export default function KhatmahDetailScreen() {
     setDistributing(true)
     try {
       await distributeAutomatic(instance.id, 'random')
+      refresh()
     } catch (err) {
       Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
     } finally {
       setDistributing(false)
     }
-  }, [instance, t])
-
-  const handleManualAssign = useCallback((juzNum: number) => {
-    if (!instance) return
-    Alert.prompt(
-      t('khatmah.reassignTitle', { num: juzNum }),
-      t('khatmah.reassignMessage'),
-      async (userId) => {
-        if (!userId?.trim()) return
-        setActionLoading(juzNum)
-        try {
-          await assignManual(instance.id, juzNum, userId.trim(), userId.trim())
-        } catch (err) {
-          Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
-        } finally {
-          setActionLoading(null)
-        }
-      },
-      'plain-text',
-      '',
-    )
-  }, [instance, t])
+  }, [instance, t, refresh])
 
   const handleCycleReset = useCallback(() => {
     if (!id) return
@@ -222,12 +133,13 @@ export default function KhatmahDetailScreen() {
     setActionLoading(juzNum)
     try {
       await markHelpRequested(instance.id, juzNum)
+      refresh()
     } catch (err) {
       Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
     } finally {
       setActionLoading(null)
     }
-  }, [instance, t])
+  }, [instance, t, refresh])
 
   const handleAdopt = useCallback(async (juzNum: number) => {
     if (!instance || !currentUserId || !session?.user) return
@@ -238,33 +150,52 @@ export default function KhatmahDetailScreen() {
     setActionLoading(juzNum)
     try {
       await adoptJuz(instance.id, juzNum, currentUserId, adopterName)
+      refresh()
     } catch (err) {
       Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
     } finally {
       setActionLoading(null)
     }
-  }, [instance, currentUserId, session, t])
+  }, [instance, currentUserId, session, t, refresh])
 
   const handleReassign = useCallback((juzNum: number) => {
-    if (!instance) return
-    Alert.prompt(
-      t('khatmah.reassignTitle', { num: juzNum }),
-      t('khatmah.reassignMessage'),
-      async (newUserId) => {
-        if (!newUserId?.trim()) return
-        setActionLoading(juzNum)
-        try {
-          await reassignJuz(instance.id, juzNum, newUserId.trim(), newUserId.trim())
-        } catch (err) {
-          Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
-        } finally {
-          setActionLoading(null)
-        }
-      },
-      'plain-text',
-      '',
-    )
-  }, [instance, t])
+    setReassignJuzNum(juzNum)
+    setSelectedParticipant(null)
+    setReassignModalVisible(true)
+  }, [])
+
+  const handleReassignConfirm = useCallback(async () => {
+    if (!instance || reassignJuzNum == null || !selectedParticipant) return
+    setActionLoading(reassignJuzNum)
+    try {
+      await reassignJuz(instance.id, reassignJuzNum, selectedParticipant.userId, selectedParticipant.fullName)
+      setReassignModalVisible(false)
+      setReassignJuzNum(null)
+      setSelectedParticipant(null)
+      refresh()
+    } catch (err) {
+      Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
+    } finally {
+      setActionLoading(null)
+    }
+  }, [instance, reassignJuzNum, selectedParticipant, t, refresh])
+
+  const handleSelfAssign = useCallback(async (juzNum: number) => {
+    if (!instance || !currentUserId || !session?.user) return
+    const userName =
+      (session.user.user_metadata as { full_name?: string } | undefined)?.full_name ??
+      session.user.email ??
+      currentUserId
+    setActionLoading(juzNum)
+    try {
+      await assignManual(instance.id, juzNum, currentUserId, userName)
+      refresh()
+    } catch (err) {
+      Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
+    } finally {
+      setActionLoading(null)
+    }
+  }, [instance, currentUserId, session, t, refresh])
 
   const handleJuzPress = useCallback((juzNum: number) => {
     router.push(`/(app)/khatmah/${id}/juz/${juzNum}`)
@@ -305,67 +236,18 @@ export default function KhatmahDetailScreen() {
 
   const ListHeader = (
     <KView>
-      {reconnecting ? (
-        <KView style={styles.reconnectBanner}>
-          <KText style={styles.reconnectText}>{t('khatmah.loading')}</KText>
-        </KView>
-      ) : null}
-
-      <KView style={styles.header}>
-        <KText style={styles.title}>{khatmah.name}</KText>
-        {isCreator ? (
-          <TouchableOpacity
-            onPress={handleSettingsPress}
-            accessibilityRole="button"
-            accessibilityLabel={t('khatmah.settings')}
-          >
-            <KText style={styles.settingsLink}>{t('khatmah.settings')}</KText>
-          </TouchableOpacity>
-        ) : null}
-      </KView>
-
-      {/* Creator: help-requested banner */}
-      {isCreator && helpRequestedCount > 0 ? (
-        <KView style={styles.helpBanner}>
-          <KText style={styles.helpBannerText}>
-            {`⚠️ ${t('khatmah.helpAlert')}: ${helpRequestedCount} ${t('khatmah.juz')}`}
-          </KText>
-        </KView>
-      ) : null}
-
-      {/* Creator controls */}
-      {isCreator ? (
-        <KView style={styles.creatorControls}>
-          {!isManualMode ? (
-            <TouchableOpacity
-              style={[styles.controlBtn, distributing && styles.btnDisabled]}
-              onPress={() => { void handleDistributeAutomatic() }}
-              disabled={distributing}
-              accessibilityRole="button"
-              accessibilityLabel={t('khatmah.automatic')}
-            >
-              {distributing
-                ? <ActivityIndicator size="small" color={colors.surface} />
-                : <KText style={styles.controlBtnText}>{t('khatmah.automatic')}</KText>
-              }
-            </TouchableOpacity>
-          ) : null}
-          <TouchableOpacity
-            style={[styles.controlBtn, styles.controlBtnDanger, resetting && styles.btnDisabled]}
-            onPress={handleCycleReset}
-            disabled={resetting}
-            accessibilityRole="button"
-            accessibilityLabel={t('khatmah.cycleReset')}
-          >
-            {resetting
-              ? <ActivityIndicator size="small" color={colors.surface} />
-              : <KText style={styles.controlBtnText}>{t('khatmah.cycleReset')}</KText>
-            }
-          </TouchableOpacity>
-        </KView>
-      ) : null}
-
-      <KText style={styles.sectionTitle}>{t('khatmah.juzList')}</KText>
+      <ReconnectBanner visible={reconnecting} />
+      <KhatmahHeader
+        khatmahName={khatmah.name}
+        isCreator={isCreator}
+        isManualMode={isManualMode}
+        helpRequestedCount={helpRequestedCount}
+        distributing={distributing}
+        resetting={resetting}
+        onSettingsPress={handleSettingsPress}
+        onDistributeAutomatic={() => { void handleDistributeAutomatic() }}
+        onCycleReset={handleCycleReset}
+      />
     </KView>
   )
 
@@ -383,6 +265,7 @@ export default function KhatmahDetailScreen() {
           const isCompleted = instance.juzCompleted[juzNum] === true
           const isHelpRequested = instance.juzHelpRequested[juzNum] === true
           const isMyJuz = assignedUserId === currentUserId
+          const isUnassigned = assignedUserId == null
 
           return (
             <JuzRow
@@ -394,21 +277,30 @@ export default function KhatmahDetailScreen() {
               isCreator={isCreator}
               isManualMode={isManualMode}
               isMyJuz={isMyJuz}
+              isUnassigned={isUnassigned}
               actionLoading={actionLoading === juzNum}
               onCantRead={() => { void handleCantRead(juzNum) }}
               onAdopt={() => { void handleAdopt(juzNum) }}
               onReassign={() => { handleReassign(juzNum) }}
+              onSelfAssign={() => { void handleSelfAssign(juzNum) }}
               onPress={() => { handleJuzPress(juzNum) }}
             />
           )
         }}
       />
-      {/* Creator: manual assign FAB-style row (tap any juz row to assign) */}
-      {isCreator && isManualMode ? (
-        <KView style={styles.manualHint}>
-          <KText style={styles.manualHintText}>{t('khatmah.manual')}: {t('khatmah.reassign')}</KText>
-        </KView>
-      ) : null}
+      <ManualHint visible={isCreator && isManualMode} />
+
+      <ReassignModal
+        visible={reassignModalVisible}
+        juzNum={reassignJuzNum}
+        participants={participants}
+        selectedParticipant={selectedParticipant}
+        loadingParticipants={loadingParticipants}
+        actionLoading={actionLoading === reassignJuzNum}
+        onSelectParticipant={setSelectedParticipant}
+        onConfirm={() => { void handleReassignConfirm() }}
+        onCancel={() => setReassignModalVisible(false)}
+      />
     </KSafeAreaView>
   )
 }
@@ -426,148 +318,5 @@ function makeStyles(
     listContent: { padding: spacing.lg, paddingBottom: spacing.xl },
     loadingText: { marginTop: spacing.sm, color: colors.textMuted, fontSize: typography.fontSizeMD },
     errorText: { color: colors.error, fontSize: typography.fontSizeMD, textAlign: 'center' },
-    reconnectBanner: {
-      backgroundColor: colors.border,
-      padding: spacing.sm,
-      borderRadius: 6,
-      marginBottom: spacing.sm,
-      alignItems: 'center',
-    },
-    reconnectText: { fontSize: typography.fontSizeSM, color: colors.textMuted },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: spacing.md,
-    },
-    title: {
-      fontSize: typography.fontSizeXL,
-      fontWeight: typography.fontWeightBold,
-      color: colors.text,
-      flex: 1,
-    },
-    settingsLink: {
-      fontSize: typography.fontSizeSM,
-      color: colors.primary,
-      fontWeight: typography.fontWeightMedium,
-    },
-    helpBanner: {
-      backgroundColor: colors.error,
-      borderRadius: 8,
-      padding: spacing.md,
-      marginBottom: spacing.md,
-    },
-    helpBannerText: {
-      color: colors.surface,
-      fontSize: typography.fontSizeMD,
-      fontWeight: typography.fontWeightMedium,
-    },
-    creatorControls: {
-      flexDirection: 'row',
-      gap: spacing.sm,
-      marginBottom: spacing.md,
-    },
-    controlBtn: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      borderRadius: 8,
-      paddingVertical: spacing.sm,
-      alignItems: 'center',
-    },
-    controlBtnDanger: { backgroundColor: colors.error },
-    btnDisabled: { opacity: 0.6 },
-    controlBtnText: {
-      color: colors.surface,
-      fontSize: typography.fontSizeSM,
-      fontWeight: typography.fontWeightMedium,
-    },
-    sectionTitle: {
-      fontSize: typography.fontSizeLG,
-      fontWeight: typography.fontWeightMedium,
-      color: colors.text,
-      marginBottom: spacing.sm,
-    },
-    manualHint: {
-      padding: spacing.md,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-    },
-    manualHintText: { fontSize: typography.fontSizeSM, color: colors.textMuted },
-  })
-}
-
-function makeRowStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  spacing: ReturnType<typeof useTheme>['spacing'],
-  typography: ReturnType<typeof useTheme>['typography'],
-) {
-  return StyleSheet.create({
-    row: {
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: spacing.md,
-      marginBottom: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    rowCompleted: { opacity: 0.55 },
-    info: { marginBottom: spacing.xs },
-    juzNum: {
-      fontSize: typography.fontSizeMD,
-      fontWeight: typography.fontWeightBold,
-      color: colors.text,
-    },
-    assignee: { fontSize: typography.fontSizeSM, color: colors.textMuted, marginTop: 2 },
-    planb: { fontSize: typography.fontSizeSM, color: colors.primary, marginTop: 2 },
-    completedBadge: {
-      fontSize: typography.fontSizeXS,
-      color: colors.success,
-      fontWeight: typography.fontWeightMedium,
-      marginTop: 4,
-    },
-    helpBadge: {
-      fontSize: typography.fontSizeXS,
-      color: colors.error,
-      fontWeight: typography.fontWeightMedium,
-      marginTop: 4,
-    },
-    cantReadBtn: {
-      marginTop: spacing.sm,
-      borderWidth: 1,
-      borderColor: colors.error,
-      borderRadius: 6,
-      paddingVertical: spacing.xs,
-      paddingHorizontal: spacing.md,
-      alignSelf: 'flex-start',
-    },
-    cantReadText: {
-      color: colors.error,
-      fontSize: typography.fontSizeSM,
-      fontWeight: typography.fontWeightMedium,
-    },
-    creatorActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-    actionBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: 6,
-      paddingVertical: spacing.xs,
-      paddingHorizontal: spacing.md,
-    },
-    actionBtnOutline: {
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.primary,
-    },
-    actionBtnText: {
-      color: colors.surface,
-      fontSize: typography.fontSizeSM,
-      fontWeight: typography.fontWeightMedium,
-    },
-    actionBtnOutlineText: {
-      color: colors.primary,
-      fontSize: typography.fontSizeSM,
-      fontWeight: typography.fontWeightMedium,
-    },
   })
 }

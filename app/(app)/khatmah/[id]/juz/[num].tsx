@@ -32,7 +32,7 @@ export default function JuzDetailScreen() {
   const juzNum = parseInt(num ?? '1', 10)
   const safeJuzNum = isNaN(juzNum) || juzNum < 1 || juzNum > 30 ? 1 : juzNum
 
-  const { instance, loading: instanceLoading } = useActiveInstance(id ?? '')
+  const { instance, loading: instanceLoading, refresh } = useActiveInstance(id ?? '')
   const { currentPage, loading: pageLoading } = useJuzProgress(instance?.id ?? '', safeJuzNum)
 
   const [pageInput, setPageInput] = useState('')
@@ -78,6 +78,7 @@ export default function JuzDetailScreen() {
     setUpdatingPage(true)
     try {
       await updatePage(instance.id, safeJuzNum, page)
+      refresh()
     } catch (err) {
       if (err instanceof ValidationError) {
         setPageError(t('juz.pageOutOfRange'))
@@ -102,6 +103,7 @@ export default function JuzDetailScreen() {
             setFinishing(true)
             try {
               await finishJuz(instance.id, safeJuzNum)
+              refresh()
             } catch (err) {
               Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
             } finally {
@@ -118,6 +120,7 @@ export default function JuzDetailScreen() {
     setMarkingHelp(true)
     try {
       await markHelpRequested(instance.id, safeJuzNum)
+      refresh()
     } catch (err) {
       Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined)
     } finally {

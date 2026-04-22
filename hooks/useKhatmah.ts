@@ -55,9 +55,14 @@ export function useKhatmah(id: string): UseKhatmahResult {
         return
       }
 
+      // Unsubscribe from old channel if it exists
+      if (channel != null) {
+        await supabase.removeChannel(channel)
+      }
+
       // Subscribe to this specific khatmah row changes
       channel = supabase
-        .channel(`khatmah-${id}`)
+        .channel(`khatmah-${id}-${Date.now()}`)
         .on(
           'postgres_changes',
           {

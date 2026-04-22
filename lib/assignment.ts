@@ -40,9 +40,10 @@ interface Participant {
  * Fetch participants for a given instance by:
  * 1. Looking up khatmah_id from khatmah_instances
  * 2. Querying khatmah_participants joined with profiles for display names
+ * Uses display_name from profiles (which is set from Gmail account name on signup)
  * Requirements: 5.4, 5.5
  */
-async function fetchParticipants(instanceId: string): Promise<Participant[]> {
+export async function fetchParticipants(instanceId: string): Promise<Participant[]> {
   // Step 1: get khatmah_id from the instance
   const { data: instance, error: instanceError } = await supabase
     .from('khatmah_instances')
@@ -68,9 +69,14 @@ async function fetchParticipants(instanceId: string): Promise<Participant[]> {
 
   return rows.map((row) => {
     const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles
+    const displayName = (profile as { display_name: string | null } | null)?.display_name
+
+    // Use display_name if available and not empty, otherwise use shortened user_id
+    const fullName = displayName && displayName.trim() ? displayName : row.user_id.substring(0, 8)
+
     return {
       userId: row.user_id,
-      fullName: (profile as { display_name: string | null } | null)?.display_name ?? '',
+      fullName,
     }
   })
 }

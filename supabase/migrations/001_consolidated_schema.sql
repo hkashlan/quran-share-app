@@ -20,7 +20,7 @@ CREATE TABLE profiles (
 CREATE TABLE khatmahs (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name             TEXT NOT NULL,
-  creator_id       UUID NOT NULL REFERENCES profiles(id),
+  creator_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   lifecycle_type   TEXT NOT NULL CHECK (lifecycle_type IN ('one_time', 'recurring')),
   reset_calendar   TEXT CHECK (reset_calendar IN ('gregorian', 'islamic')),
   auto_renewal     BOOLEAN NOT NULL DEFAULT false,
@@ -370,18 +370,39 @@ CREATE POLICY "profiles_update_own"
   USING (id = auth.uid())
   WITH CHECK (id = auth.uid());
 
+-- A user can see all participant rows for any khatmah they are a member of.
+-- We avoid self-reference by checking khatmahs.creator_id OR the user's own row directly.
+-- The trick: use a SECURITY DEFINER function to bypass RLS when checking membership.
+
+CREATE OR REPLACE FUNCTION is_khatmah_member(p_khatmah_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM khatmah_participants
+    WHERE khatmah_id = p_khatmah_id
+      AND user_id = auth.uid()
+  );
+$$;
+
+CREATE POLICY "khatmah_participants_select_member"
+  ON khatmah_participants FOR SELECT
+  USING (is_khatmah_member(khatmah_id));
 -- ============================================================
 -- khatmahs RLS policies
 -- ============================================================
 CREATE POLICY "khatmahs_select_participant"
   ON khatmahs FOR SELECT
   USING (
-    EXISTS (
-      SELECT 1 FROM khatmah_participants
-      WHERE khatmah_participants.khatmah_id = khatmahs.id
-        AND khatmah_participants.user_id = auth.uid()
-    )
+    creator_id = auth.uid()
+    OR is_khatmah_member(id)
   );
+
+CREATE POLICY "khatmahs_select_by_invite"
+  ON khatmahs FOR SELECT
+  USING (true);
 
 CREATE POLICY "khatmahs_insert_authenticated"
   ON khatmahs FOR INSERT
@@ -395,15 +416,7 @@ CREATE POLICY "khatmahs_update_creator"
 -- ============================================================
 -- khatmah_participants RLS policies
 -- ============================================================
-CREATE POLICY "khatmah_participants_select_member"
-  ON khatmah_participants FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM khatmah_participants kp
-      WHERE kp.khatmah_id = khatmah_participants.khatmah_id
-        AND kp.user_id = auth.uid()
-    )
-  );
+
 
 CREATE POLICY "khatmah_participants_insert_self"
   ON khatmah_participants FOR INSERT
@@ -482,8 +495,16 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, jazah_total, language)
-  VALUES (NEW.id, 0, 'ar');
+  INSERT INTO public.profiles (id, display_name, jazah_total, language)
+  VALUES (
+    NEW.id,
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.email
+    ),
+    0,
+    'ar'
+  );
   RETURN NEW;
 END;
 $$;

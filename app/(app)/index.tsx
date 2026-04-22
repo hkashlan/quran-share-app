@@ -114,7 +114,7 @@ export default function DashboardScreen() {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
   const router = useRouter()
-  const { session } = useSession()
+  const { session, logout } = useSession()
   const userId = session?.user.id ?? ''
 
   const { khatmahs, loading: khatmahsLoading, reconnecting } = useKhatmahList()
@@ -129,6 +129,10 @@ export default function DashboardScreen() {
   const handleCreatePress = useCallback(() => {
     router.push('/(app)/khatmah/new')
   }, [router])
+
+  const handleLogout = useCallback(async () => {
+    await logout()
+  }, [logout])
 
   const activeKhatmahs = khatmahs.filter((k) => k.status === 'active')
 
@@ -198,7 +202,16 @@ export default function DashboardScreen() {
 
   return (
     <KSafeAreaView style={styles.safe}>
-      <KText style={styles.screenTitle}>{t('dashboard.title')}</KText>
+      <KView style={styles.header}>
+        <KText style={styles.screenTitle}>{t('dashboard.title')}</KText>
+        <TouchableOpacity
+          onPress={handleLogout}
+          accessibilityRole="button"
+          accessibilityLabel={t('auth.logout')}
+        >
+          <KText style={styles.logoutLink}>{t('auth.logout')}</KText>
+        </TouchableOpacity>
+      </KView>
       <FlatList
         data={khatmahs}
         keyExtractor={keyExtractor}
@@ -232,13 +245,23 @@ function makeStyles(
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.sm,
+    },
     screenTitle: {
       fontSize: typography.fontSizeXL,
       fontWeight: typography.fontWeightBold,
       color: colors.text,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.sm,
+    },
+    logoutLink: {
+      fontSize: typography.fontSizeSM,
+      color: colors.error,
+      fontWeight: typography.fontWeightMedium,
     },
     listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
     reconnectBanner: {

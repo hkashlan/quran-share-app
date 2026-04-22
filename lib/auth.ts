@@ -29,7 +29,15 @@ export async function signUpWithEmail(
     return { session: null, error: { message: 'Invalid email format', code: 'invalid_email' } }
   }
 
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: email.split('@')[0], // Use email prefix as display name
+      },
+    },
+  })
 
   if (error) {
     return { session: null, error: mapSupabaseError(error) }

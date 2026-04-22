@@ -60,9 +60,14 @@ export function useKhatmahList(): UseKhatmahListResult {
         return
       }
 
+      // Unsubscribe from old channel if it exists
+      if (channel != null) {
+        await supabase.removeChannel(channel)
+      }
+
       // Subscribe to khatmahs table changes for this user's khatmahs
       channel = supabase
-        .channel(`khatmah-list-${userId}`)
+        .channel(`khatmah-list-${userId}-${Date.now()}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'khatmahs' },
