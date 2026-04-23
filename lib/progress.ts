@@ -81,6 +81,23 @@ export async function updatePage(instanceId: string, juzNum: number, page: numbe
 }
 
 /**
+ * Reverts a completed Juz' back to incomplete (un-marks completion).
+ * Requirements: 7.3
+ */
+export async function unfinishJuz(instanceId: string, juzNum: number): Promise<void> {
+  const revertUpdate: InstanceUpdate = {
+    [completedCol(juzNum)]: false,
+  } as InstanceUpdate
+
+  const { error } = await supabase
+    .from('khatmah_instances')
+    .update(revertUpdate)
+    .eq('id', instanceId)
+
+  if (error != null) throw new Error(`Failed to revert Juz' completion: ${error.message}`)
+}
+
+/**
  * Marks the Juz' as completed, awards Jazah to the appropriate user,
  * and notifies all Khatmah participants via Notification_Service.
  * Requirements: 7.3, 7.5, 7.6

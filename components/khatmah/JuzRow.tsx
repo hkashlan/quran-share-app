@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
 import { ListItem, Badge } from '@rneui/themed'
-import { KText } from '@/components/ui'
+import { KText, ConfirmDialog } from '@/components/ui'
 import { useTheme } from '@/theme/ThemeProvider'
 import { useJuzProgress } from '@/hooks/useJuzProgress'
 import { useUpdatePage } from '@/hooks/mutations/useUpdatePage'
@@ -16,6 +16,7 @@ export interface JuzActionSet {
   showAssign: boolean
   showReassign: boolean
   showCantRead: boolean
+  showRevert: boolean
 }
 
 export function deriveJuzActions(props: {
@@ -28,7 +29,13 @@ export function deriveJuzActions(props: {
 }): JuzActionSet {
   const { isCreator, isMyJuz, isUnassigned, isCompleted, isHelpRequested, isManualMode } = props
   if (isCompleted) {
-    return { showCompleted: false, showAssign: false, showReassign: false, showCantRead: false }
+    return {
+      showCompleted: false,
+      showAssign: false,
+      showReassign: false,
+      showCantRead: false,
+      showRevert: isCreator || isMyJuz,
+    }
   }
   const isAssigned = !isUnassigned
   return {
@@ -36,6 +43,7 @@ export function deriveJuzActions(props: {
     showAssign: isCreator && isManualMode && isUnassigned,
     showReassign: isCreator && isManualMode && isAssigned,
     showCantRead: isMyJuz && !isHelpRequested,
+    showRevert: false,
   }
 }
 
@@ -57,6 +65,7 @@ export interface JuzRowProps {
   onCantRead: () => void
   onReassignConfirm: (juzNum: number, userId: string, fullName: string) => void
   reassignLoading: boolean
+  onRevertReading: () => void
 }
 
 export function JuzRow({
@@ -77,6 +86,7 @@ export function JuzRow({
   onCantRead,
   onReassignConfirm,
   reassignLoading,
+  onRevertReading,
 }: JuzRowProps) {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
@@ -87,6 +97,8 @@ export function JuzRow({
   const [participants, setParticipants] = useState<ParticipantOption[]>([])
   const [selectedParticipant, setSelectedParticipant] = useState<ParticipantOption | null>(null)
   const [loadingParticipants, setLoadingParticipants] = useState(false)
+  const [showRevertDialog, setShowRevertDialog] = useState(false)
+  const [errorDialog, setErrorDialog] = useState<string | null>(null)
 
   // ── Progress ─────────────────────────────────────────────────────────────────
   const { data: currentPage, isLoading: pageLoading } = useJuzProgress(
@@ -124,7 +136,7 @@ export function JuzRow({
       setLoadingParticipants(true)
       fetchParticipants(instanceId)
         .then((fetched) => setParticipants(fetched.map((p) => ({ userId: p.userId, fullName: p.fullName }))))
-        .catch((err) => Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined))
+        .catch((err) => setErrorDialog(err instanceof Error ? err.message : t('khatmah.error')))
         .finally(() => setLoadingParticipants(false))
     }
   }, [instanceId, participants.length, t])
@@ -153,7 +165,8 @@ export function JuzRow({
     planbName != null ||
     actions.showReassign ||
     actions.showAssign ||
-    actions.showCantRead
+    actions.showCantRead ||
+    actions.showRevert
 
   // ── Primary header action ─────────────────────────────────────────────────────
   const primaryAction = actionLoading ? (
@@ -177,6 +190,7 @@ export function JuzRow({
   ) : null
 
   return (
+    <>
     <ListItem.Accordion
       containerStyle={[
         styles.accordionContainer,
@@ -191,9 +205,6 @@ export function JuzRow({
           <View style={styles.headerMeta}>
             <KText style={styles.assigneeName} numberOfLines={1}>{assignedName}</KText>
             <View style={styles.badgeRow}>
-              {isCompleted && (
-                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-              )}
               {isHelpRequested && !isCompleted && (
                 <Badge
                   value={t('juz.helpRequested')}
@@ -208,12 +219,21 @@ export function JuzRow({
       }
       isExpanded={expanded}
       onPress={() => {
-        if (!hasExpandableContent) return
+        if (isCompleted || !hasExpandableContent) return
         if (actions.showAssign && !expanded) openReassignPanel()
         else setExpanded((v) => !v)
       }}
       icon={
-        hasExpandableContent
+        isCompleted ? (
+          <TouchableOpacity
+            onPress={() => setShowRevertDialog(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('juz.revertReading')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="checkmark-circle" size={28} color={colors.success} />
+          </TouchableOpacity>
+        ) : hasExpandableContent
           ? <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
           : <View style={styles.iconPlaceholder} />
       }
@@ -256,6 +276,32 @@ export function JuzRow({
         </ListItem.Content>
       </ListItem>
     </ListItem.Accordion>
+
+    <ConfirmDialog
+      visible={showRevertDialog}
+      title={t('juz.revertReadingConfirmTitle', { num: juzNum })}
+      message={t('juz.revertReadingConfirmMessage', { num: juzNum })}
+      onDismiss={() => setShowRevertDialog(false)}
+      actions={[
+        { label: t('khatmah.cancel'), style: 'cancel', onPress: () => setShowRevertDialog(false) },
+        {
+          label: t('juz.revertReading'),
+          style: 'destructive',
+          onPress: () => { setShowRevertDialog(false); onRevertReading() },
+        },
+      ]}
+    />
+
+    <ConfirmDialog
+      visible={errorDialog != null}
+      title={t('khatmah.error')}
+      message={errorDialog ?? undefined}
+      onDismiss={() => setErrorDialog(null)}
+      actions={[
+        { label: t('khatmah.cancel'), style: 'cancel', onPress: () => setErrorDialog(null) },
+      ]}
+    />
+    </>
   )
 }
 

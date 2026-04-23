@@ -26,6 +26,7 @@ import { useReassignJuz } from '@/hooks/mutations/useReassignJuz'
 import { useAssignManual } from '@/hooks/mutations/useAssignManual'
 import { useFinishJuz } from '@/hooks/mutations/useFinishJuz'
 import { useMarkHelpRequested } from '@/hooks/mutations/useMarkHelpRequested'
+import { useUnfinishJuz } from '@/hooks/mutations/useUnfinishJuz'
 import { JuzRow } from '@/components/khatmah/JuzRow'
 import { KhatmahHeader } from '@/components/khatmah/KhatmahHeader'
 import { ManualHint } from '@/components/khatmah/ManualHint'
@@ -51,6 +52,7 @@ export default function KhatmahDetailScreen() {
   const assignManual = useAssignManual(id ?? '')
   const finishJuz = useFinishJuz(id ?? '', currentUserId ?? '')
   const markHelpRequested = useMarkHelpRequested(id ?? '')
+  const unfinishJuz = useUnfinishJuz(id ?? '')
 
   const styles = makeStyles(colors, spacing, typography)
   const isCreator = khatmah != null && currentUserId === khatmah.creatorId
@@ -140,6 +142,14 @@ export default function KhatmahDetailScreen() {
     )
   }, [instance, markHelpRequested, t])
 
+  const handleRevertReading = useCallback((juzNum: number) => {
+    if (!instance) return
+    unfinishJuz.mutate(
+      { instanceId: instance.id, juzNum },
+      { onError: (err) => Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined) },
+    )
+  }, [instance, unfinishJuz, t])
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -205,7 +215,8 @@ export default function KhatmahDetailScreen() {
             (adoptJuz.isPending && (adoptJuz.variables as { juzNum: number } | undefined)?.juzNum === juzNum) ||
             (assignManual.isPending && (assignManual.variables as { juzNum: number } | undefined)?.juzNum === juzNum) ||
             (finishJuz.isPending && finishJuz.variables?.juzNum === juzNum) ||
-            (markHelpRequested.isPending && markHelpRequested.variables?.juzNum === juzNum)
+            (markHelpRequested.isPending && markHelpRequested.variables?.juzNum === juzNum) ||
+            (unfinishJuz.isPending && unfinishJuz.variables?.juzNum === juzNum)
 
           return (
             <JuzRow
@@ -226,6 +237,7 @@ export default function KhatmahDetailScreen() {
               onCantRead={() => { handleCantRead(juzNum) }}
               onReassignConfirm={handleReassignConfirm}
               reassignLoading={reassignJuz.isPending}
+              onRevertReading={() => { handleRevertReading(juzNum) }}
             />
           )
         }}

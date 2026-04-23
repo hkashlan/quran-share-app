@@ -85,7 +85,10 @@
     "adopted": "تم التبني",
     "pageOutOfRange": "رقم الصفحة خارج النطاق المسموح به",
     "assignedTo": "مُسند إلى",
-    "planBUser": "المستخدم البديل"
+    "planBUser": "المستخدم البديل",
+    "revertReading": "التراجع عن القراءة",
+    "revertReadingConfirmTitle": "التراجع عن الجزء {{num}}؟",
+    "revertReadingConfirmMessage": "سيتم تعليم الجزء {{num}} كغير مقروء. هل أنت متأكد؟"
   },
   "join": {
     "loading": "جارٍ التحميل...",

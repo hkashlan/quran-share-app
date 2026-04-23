@@ -86,7 +86,10 @@
     "adopted": "Adopted",
     "pageOutOfRange": "Page number is out of the valid range",
     "assignedTo": "Assigned to",
-    "planBUser": "Plan-B User"
+    "planBUser": "Plan-B User",
+    "revertReading": "Revert Reading",
+    "revertReadingConfirmTitle": "Revert Juz' {{num}}?",
+    "revertReadingConfirmMessage": "This will mark Juz' {{num}} as unread. Are you sure?"
   },
   "join": {
     "loading": "Loading...",
