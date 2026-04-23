@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { ActivityIndicator, Alert, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Ionicons } from '@expo/vector-icons'
-import { KView, KText } from '@/components/ui'
+import { ListItem, Badge } from '@rneui/themed'
+import { KText } from '@/components/ui'
 import { useTheme } from '@/theme/ThemeProvider'
 import { useJuzProgress } from '@/hooks/useJuzProgress'
 import { useUpdatePage } from '@/hooks/mutations/useUpdatePage'
 import { ValidationError } from '@/lib/progress'
+import { ReassignPanel, ParticipantOption } from '@/components/khatmah/ReassignPanel'
+import { fetchParticipants } from '@/lib/assignment'
 
 export interface JuzActionSet {
   showCompleted: boolean
@@ -47,14 +50,13 @@ export interface JuzRowProps {
   isMyJuz: boolean
   isUnassigned: boolean
   actionLoading: boolean
-  // IDs needed for mutations when isMyJuz
-  instanceId?: string
+  instanceId: string
   onAdopt: () => void
-  onReassign: () => void
   onSelfAssign: () => void
   onComplete: () => void
   onCantRead: () => void
-  reassignPanel?: React.ReactNode
+  onReassignConfirm: (juzNum: number, userId: string, fullName: string) => void
+  reassignLoading: boolean
 }
 
 export function JuzRow({
@@ -70,24 +72,29 @@ export function JuzRow({
   actionLoading,
   instanceId,
   onAdopt,
-  onReassign,
   onSelfAssign,
   onComplete,
   onCantRead,
-  reassignPanel,
+  onReassignConfirm,
+  reassignLoading,
 }: JuzRowProps) {
   const { t } = useTranslation()
   const { colors, spacing, typography } = useTheme()
   const styles = makeStyles(colors, spacing, typography)
 
-  // ── Progress (only fetched when this is the user's own juz) ─────────────────
+  const [expanded, setExpanded] = useState(false)
+  const [showReassignPanel, setShowReassignPanel] = useState(false)
+  const [participants, setParticipants] = useState<ParticipantOption[]>([])
+  const [selectedParticipant, setSelectedParticipant] = useState<ParticipantOption | null>(null)
+  const [loadingParticipants, setLoadingParticipants] = useState(false)
+
+  // ── Progress ─────────────────────────────────────────────────────────────────
   const { data: currentPage, isLoading: pageLoading } = useJuzProgress(
     isMyJuz && instanceId ? instanceId : '',
     juzNum,
   )
   const [pageInput, setPageInput] = useState('')
   const [pageError, setPageError] = useState<string | null>(null)
-
   const updatePage = useUpdatePage(instanceId ?? '', juzNum)
 
   useEffect(() => {
@@ -95,15 +102,6 @@ export function JuzRow({
       setPageInput(String(currentPage))
     }
   }, [currentPage, pageLoading])
-
-  const actions = deriveJuzActions({
-    isCreator,
-    isMyJuz,
-    isUnassigned,
-    isCompleted,
-    isHelpRequested,
-    isManualMode,
-  })
 
   function handleUpdatePage() {
     setPageError(null)
@@ -118,74 +116,146 @@ export function JuzRow({
     })
   }
 
-  return (
-    <View style={[styles.row, isCompleted && styles.rowCompleted]}>
-      {/* Row header — always visible */}
-      <KView style={styles.info}>
-        <KText style={styles.juzNum}>{t('juz.title', { num: juzNum })}</KText>
-        <KText style={styles.assignee} numberOfLines={1}>{assignedName}</KText>
-        {planbName != null ? (
-          <KText style={styles.planb} numberOfLines={1}>{`${t('juz.planBUser')}: ${planbName}`}</KText>
-        ) : null}
-        {isCompleted ? (
-          <Ionicons name="checkmark-circle" size={24} color={colors.success} accessibilityLabel={t('khatmah.completed')} />
-        ) : null}
-        {isHelpRequested && !isCompleted ? (
-          <KText style={styles.helpBadge}>{t('juz.helpRequested')}</KText>
-        ) : null}
+  // ── Reassign panel ────────────────────────────────────────────────────────────
+  const openReassignPanel = useCallback(() => {
+    setShowReassignPanel(true)
+    setExpanded(true)
+    if (participants.length === 0) {
+      setLoadingParticipants(true)
+      fetchParticipants(instanceId)
+        .then((fetched) => setParticipants(fetched.map((p) => ({ userId: p.userId, fullName: p.fullName }))))
+        .catch((err) => Alert.alert(t('khatmah.error'), err instanceof Error ? err.message : undefined))
+        .finally(() => setLoadingParticipants(false))
+    }
+  }, [instanceId, participants.length, t])
 
-        {/* Inline action buttons */}
-        {actionLoading ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <>
-            {!isCreator && isUnassigned && !isCompleted && !isHelpRequested ? (
-              <TouchableOpacity
-                style={styles.headerBtn}
-                onPress={onSelfAssign}
-                accessibilityRole="button"
-                accessibilityLabel={t('juz.selfAssign')}
-              >
-                <KText style={styles.headerBtnText}>{t('juz.selfAssign')}</KText>
-              </TouchableOpacity>
-            ) : null}
-            {isCreator && isHelpRequested && !isCompleted ? (
-              <TouchableOpacity
-                style={styles.headerBtn}
-                onPress={onAdopt}
-                accessibilityRole="button"
-                accessibilityLabel={`${t('khatmah.adopt')} ${t('juz.title', { num: juzNum })}`}
-              >
-                <KText style={styles.headerBtnText}>{t('khatmah.adopt')}</KText>
-              </TouchableOpacity>
-            ) : null}
-            {actions.showCompleted && (
-              <TouchableOpacity style={styles.completedBtn} onPress={onComplete} accessibilityRole="button">
-                <KText style={styles.completedBtnText}>{t('khatmah.completed')}</KText>
-              </TouchableOpacity>
-            )}
-            {actions.showAssign && (
-              <TouchableOpacity style={styles.headerBtn} onPress={onReassign} accessibilityRole="button">
-                <KText style={styles.headerBtnText}>{t('khatmah.assign')}</KText>
-              </TouchableOpacity>
-            )}
+  const closeReassignPanel = useCallback(() => {
+    setShowReassignPanel(false)
+    setSelectedParticipant(null)
+  }, [])
+
+  const handleReassignConfirm = useCallback(() => {
+    if (!selectedParticipant) return
+    onReassignConfirm(juzNum, selectedParticipant.userId, selectedParticipant.fullName)
+    closeReassignPanel()
+  }, [selectedParticipant, onReassignConfirm, juzNum, closeReassignPanel])
+
+  const actions = deriveJuzActions({
+    isCreator,
+    isMyJuz,
+    isUnassigned,
+    isCompleted,
+    isHelpRequested,
+    isManualMode,
+  })
+
+  const hasExpandableContent =
+    planbName != null ||
+    actions.showReassign ||
+    actions.showAssign ||
+    actions.showCantRead
+
+  // ── Primary header action ─────────────────────────────────────────────────────
+  const primaryAction = actionLoading ? (
+    <ActivityIndicator size="small" color={colors.primary} style={styles.headerSpinner} />
+  ) : actions.showCompleted ? (
+    <TouchableOpacity style={styles.primaryBtn} onPress={onComplete} accessibilityRole="button">
+      <KText style={styles.primaryBtnText}>{t('khatmah.markCompleted')}</KText>
+    </TouchableOpacity>
+  ) : actions.showAssign ? (
+    <TouchableOpacity style={styles.primaryBtn} onPress={openReassignPanel} accessibilityRole="button">
+      <KText style={styles.primaryBtnText}>{t('khatmah.assign')}</KText>
+    </TouchableOpacity>
+  ) : !isCreator && isUnassigned && !isCompleted ? (
+    <TouchableOpacity style={styles.primaryBtn} onPress={onSelfAssign} accessibilityRole="button">
+      <KText style={styles.primaryBtnText}>{t('juz.selfAssign')}</KText>
+    </TouchableOpacity>
+  ) : isCreator && isHelpRequested && !isCompleted ? (
+    <TouchableOpacity style={styles.adoptBtn} onPress={onAdopt} accessibilityRole="button">
+      <KText style={styles.primaryBtnText}>{t('khatmah.adopt')}</KText>
+    </TouchableOpacity>
+  ) : null
+
+  return (
+    <ListItem.Accordion
+      containerStyle={[
+        styles.accordionContainer,
+        isCompleted && styles.accordionCompleted,
+        isHelpRequested && !isCompleted && styles.accordionHelp,
+      ]}
+      content={
+        <View style={styles.headerContent}>
+          <View style={styles.juzNumBadge}>
+            <KText style={styles.juzNumText}>{juzNum}</KText>
+          </View>
+          <View style={styles.headerMeta}>
+            <KText style={styles.assigneeName} numberOfLines={1}>{assignedName}</KText>
+            <View style={styles.badgeRow}>
+              {isCompleted && (
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+              )}
+              {isHelpRequested && !isCompleted && (
+                <Badge
+                  value={t('juz.helpRequested')}
+                  badgeStyle={styles.helpBadge}
+                  textStyle={styles.helpBadgeText}
+                />
+              )}
+            </View>
+          </View>
+          {primaryAction}
+        </View>
+      }
+      isExpanded={expanded}
+      onPress={() => {
+        if (!hasExpandableContent) return
+        if (actions.showAssign && !expanded) openReassignPanel()
+        else setExpanded((v) => !v)
+      }}
+      icon={
+        hasExpandableContent
+          ? <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
+          : <View style={styles.iconPlaceholder} />
+      }
+    >
+      <ListItem containerStyle={styles.expandedBody}>
+        <ListItem.Content>
+          {planbName != null && (
+            <View style={styles.detailRow}>
+              <Ionicons name="person-add-outline" size={14} color={colors.primary} />
+              <KText style={styles.detailText}>{`${t('juz.planBUser')}: ${planbName}`}</KText>
+            </View>
+          )}
+
+          <View style={styles.secondaryActions}>
             {actions.showReassign && (
-              <TouchableOpacity style={[styles.headerBtn, styles.headerBtnOutline]} onPress={onReassign} accessibilityRole="button">
-                <KText style={styles.headerBtnOutlineText}>{t('khatmah.reassign')}</KText>
+              <TouchableOpacity style={styles.outlineBtn} onPress={openReassignPanel} accessibilityRole="button">
+                <Ionicons name="swap-horizontal-outline" size={14} color={colors.primary} />
+                <KText style={styles.outlineBtnText}>{t('khatmah.reassign')}</KText>
               </TouchableOpacity>
             )}
             {actions.showCantRead && (
-              <TouchableOpacity style={styles.cantReadHeaderBtn} onPress={onCantRead} accessibilityRole="button">
-                <KText style={styles.cantReadHeaderBtnText}>{t('juz.cantRead')}</KText>
+              <TouchableOpacity style={styles.dangerBtn} onPress={onCantRead} accessibilityRole="button">
+                <Ionicons name="alert-circle-outline" size={14} color={colors.error} />
+                <KText style={styles.dangerBtnText}>{t('juz.cantRead')}</KText>
               </TouchableOpacity>
             )}
-          </>
-        )}
-      </KView>
+          </View>
 
-      {/* Inline reassign panel */}
-      {reassignPanel}
-    </View>
+          {showReassignPanel && (
+            <ReassignPanel
+              participants={participants}
+              selectedParticipant={selectedParticipant}
+              loadingParticipants={loadingParticipants}
+              actionLoading={reassignLoading}
+              onSelectParticipant={setSelectedParticipant}
+              onConfirm={handleReassignConfirm}
+              onCancel={closeReassignPanel}
+            />
+          )}
+        </ListItem.Content>
+      </ListItem>
+    </ListItem.Accordion>
   )
 }
 
@@ -195,97 +265,115 @@ function makeStyles(
   typography: ReturnType<typeof useTheme>['typography'],
 ) {
   return StyleSheet.create({
-    row: {
+    accordionContainer: {
       backgroundColor: colors.surface,
-      borderRadius: 8,
-      padding: spacing.md,
+      borderRadius: 10,
       marginBottom: spacing.sm,
       borderWidth: 1,
       borderColor: colors.border,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
     },
-    rowCompleted: {
+    accordionCompleted: {
       backgroundColor: '#F1F8F1',
       borderColor: colors.success,
       borderLeftWidth: 4,
     },
-    info: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs, flexWrap: 'wrap' },
-    juzNum: { fontSize: typography.fontSizeMD, fontWeight: typography.fontWeightBold, color: colors.text },
-    assignee: { fontSize: typography.fontSizeMD, color: colors.text, fontWeight: typography.fontWeightMedium, flex: 1 },
-    planb: { fontSize: typography.fontSizeXS, color: colors.primary },
-    helpBadge: { fontSize: typography.fontSizeXS, color: colors.error, fontWeight: typography.fontWeightMedium },
-    headerBtn: {
+    accordionHelp: {
+      borderColor: colors.error,
+      borderLeftWidth: 4,
+    },
+    headerContent: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    juzNumBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    juzNumText: {
+      color: colors.surface,
+      fontSize: typography.fontSizeSM,
+      fontWeight: typography.fontWeightBold,
+    },
+    headerMeta: { flex: 1, gap: 2 },
+    assigneeName: {
+      fontSize: typography.fontSizeMD,
+      fontWeight: typography.fontWeightMedium,
+      color: colors.text,
+    },
+    badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    helpBadge: { backgroundColor: colors.error, borderRadius: 4, height: 18 },
+    helpBadgeText: { fontSize: 10, fontWeight: typography.fontWeightMedium },
+    headerSpinner: { marginLeft: spacing.xs },
+    iconPlaceholder: { width: 16 },
+    primaryBtn: {
       backgroundColor: colors.primary,
       borderRadius: 6,
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.sm,
     },
-    headerBtnOutline: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary },
-    headerBtnText: { color: colors.surface, fontSize: typography.fontSizeSM, fontWeight: typography.fontWeightBold },
-    headerBtnOutlineText: { color: colors.primary, fontSize: typography.fontSizeSM, fontWeight: typography.fontWeightBold },
-    completedBtn: {
-      backgroundColor: colors.success,
+    adoptBtn: {
+      backgroundColor: colors.error,
       borderRadius: 6,
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.sm,
     },
-    completedBtnText: {
+    primaryBtnText: {
       color: colors.surface,
       fontSize: typography.fontSizeSM,
       fontWeight: typography.fontWeightBold,
     },
-    cantReadHeaderBtn: {
+    expandedBody: {
+      backgroundColor: colors.background,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+    },
+    detailRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    detailText: { fontSize: typography.fontSizeSM, color: colors.primary },
+    secondaryActions: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
+    outlineBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: 6,
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.sm,
+    },
+    outlineBtnText: {
+      color: colors.primary,
+      fontSize: typography.fontSizeSM,
+      fontWeight: typography.fontWeightMedium,
+    },
+    dangerBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
       borderWidth: 1,
       borderColor: colors.error,
       borderRadius: 6,
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.sm,
     },
-    cantReadHeaderBtnText: {
+    dangerBtnText: {
       color: colors.error,
       fontSize: typography.fontSizeSM,
       fontWeight: typography.fontWeightMedium,
     },
-    // My Juz' section
-    myJuzSection: {
-      marginTop: spacing.sm,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      paddingTop: spacing.sm,
-      gap: spacing.sm,
-    },
-    pageRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    pageLabel: { fontSize: typography.fontSizeSM, color: colors.textMuted },
-    pageValue: { fontSize: typography.fontSizeLG, fontWeight: typography.fontWeightBold, color: colors.primary },
-    inputRow: { flexDirection: 'row', gap: spacing.sm },
-    input: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 6,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      fontSize: typography.fontSizeMD,
-      color: colors.text,
-      backgroundColor: colors.background,
-    },
-    inputError: { borderColor: colors.error },
-    errorText: { fontSize: typography.fontSizeXS, color: colors.error },
-    updateBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: 6,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-      justifyContent: 'center',
-      alignItems: 'center',
-      minWidth: 90,
-    },
-    updateBtnText: { color: colors.surface, fontSize: typography.fontSizeSM, fontWeight: typography.fontWeightMedium },
-    finishBtn: { backgroundColor: colors.success, borderRadius: 6, paddingVertical: spacing.sm, alignItems: 'center' },
-    finishBtnText: { color: colors.surface, fontSize: typography.fontSizeSM, fontWeight: typography.fontWeightBold },
-    cantReadBtn: { borderWidth: 1, borderColor: colors.error, borderRadius: 6, paddingVertical: spacing.sm, alignItems: 'center' },
-    cantReadText: { color: colors.error, fontSize: typography.fontSizeSM, fontWeight: typography.fontWeightMedium },
-    helpConfirm: { backgroundColor: colors.error, borderRadius: 6, padding: spacing.sm, alignItems: 'center' },
-    helpConfirmText: { color: colors.surface, fontSize: typography.fontSizeSM, fontWeight: typography.fontWeightMedium },
-    btnDisabled: { opacity: 0.6 },
   })
 }

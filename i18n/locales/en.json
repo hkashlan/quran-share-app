@@ -55,6 +55,7 @@
     "resetWarning": "All current progress data will be cleared. Are you sure?",
     "newCycle": "New Cycle",
     "completed": "Completed",
+    "markCompleted": "Done",
     "active": "Active",
     "error": "An error occurred, please try again",
     "nameRequired": "Khatmah name is required",
