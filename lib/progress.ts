@@ -81,20 +81,38 @@ export async function updatePage(instanceId: string, juzNum: number, page: numbe
 }
 
 /**
- * Reverts a completed Juz' back to incomplete (un-marks completion).
- * Requirements: 7.3
+ * Reverts a completed Juz' back to incomplete, then decrements the awardee's
+ * juz counters via RPC (non-fatal — logs warning on error).
+ * Requirements: 1.9, 1.10, 2.3, 2.4, 5.3, 7.3
  */
 export async function unfinishJuz(instanceId: string, juzNum: number): Promise<void> {
+  const { data: instance, error: fetchError } = await supabase
+    .from('khatmah_instances').select('*').eq('id', instanceId).single()
+  if (fetchError != null) throw new Error(`Failed to fetch instance: ${fetchError.message}`)
+
+  const planbUserId   = instance[`juz_${juzNum}_planb_user_id` as keyof InstanceRow]
+  const primaryUserId = instance[`juz_${juzNum}_user_id` as keyof InstanceRow]
+  const awardeeId = typeof planbUserId === 'string' ? planbUserId
+    : typeof primaryUserId === 'string' ? primaryUserId : null
+
+  // Revert completion flag
   const revertUpdate: InstanceUpdate = {
     [completedCol(juzNum)]: false,
   } as InstanceUpdate
 
-  const { error } = await supabase
-    .from('khatmah_instances')
-    .update(revertUpdate)
-    .eq('id', instanceId)
-
+  const { error } = await supabase.from('khatmah_instances')
+    .update(revertUpdate).eq('id', instanceId)
   if (error != null) throw new Error(`Failed to revert Juz' completion: ${error.message}`)
+
+  // Decrement counters (floored at 0 by RPC) — non-fatal
+  if (awardeeId !== null) {
+    const { error: counterError } = await supabase.rpc('decrement_juz_counters', {
+      p_user_id: awardeeId, p_amount: 1,
+    })
+    if (counterError != null) {
+      console.warn(`[unfinishJuz] counter decrement failed: ${counterError.message}`)
+    }
+  }
 }
 
 /**
@@ -136,6 +154,15 @@ export async function finishJuz(instanceId: string, juzNum: number): Promise<voi
 
   if (awardeeId !== null) {
     await awardJazah(khatmahId, juzNum, awardeeId)
+
+    // Increment juz counters (non-fatal — Req 1.2, 2.2, 5.3)
+    const { error: counterError } = await supabase.rpc('increment_juz_counters', {
+      p_user_id: awardeeId,
+      p_amount: 1,
+    })
+    if (counterError != null) {
+      console.warn(`[finishJuz] counter increment failed: ${counterError.message}`)
+    }
   }
 
   // Notify all participants (Requirement 7.6)

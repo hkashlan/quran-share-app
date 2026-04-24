@@ -11,6 +11,9 @@ CREATE TABLE profiles (
   avatar_url    TEXT,
   language      TEXT NOT NULL DEFAULT 'ar',
   jazah_total   INTEGER NOT NULL DEFAULT 0,
+  total_juz_lifetime  INTEGER NOT NULL DEFAULT 0,
+  total_juz_last_year INTEGER NOT NULL DEFAULT 0,
+  last_year_reset_at  TIMESTAMPTZ,
   created_at    TIMESTAMPTZ DEFAULT now()
 );
 
@@ -531,5 +534,57 @@ BEGIN
   UPDATE public.profiles
   SET jazah_total = jazah_total + p_amount
   WHERE id = p_user_id;
+END;
+$$;
+
+-- ============================================================
+-- Reading Motivation Stats (reading-motivation-stats spec)
+-- Requirements: 1.1, 1.7, 1.8, 2.1
+-- ============================================================
+
+
+-- Atomic increment: both counters +p_amount
+CREATE OR REPLACE FUNCTION public.increment_juz_counters(
+  p_user_id UUID,
+  p_amount  INTEGER DEFAULT 1
+)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET
+    total_juz_lifetime  = total_juz_lifetime  + p_amount,
+    total_juz_last_year = total_juz_last_year + p_amount
+  WHERE id = p_user_id;
+END;
+$$;
+
+-- Atomic decrement: both counters -p_amount, floored at 0
+CREATE OR REPLACE FUNCTION public.decrement_juz_counters(
+  p_user_id UUID,
+  p_amount  INTEGER DEFAULT 1
+)
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET
+    total_juz_lifetime  = GREATEST(0, total_juz_lifetime  - p_amount),
+    total_juz_last_year = GREATEST(0, total_juz_last_year - p_amount)
+  WHERE id = p_user_id;
+END;
+$$;
+
+-- Annual reset RPC (called by yearly-reset Edge Function)
+CREATE OR REPLACE FUNCTION public.reset_yearly_juz_counters()
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET
+    total_juz_last_year = 0,
+    last_year_reset_at  = now()
+  WHERE last_year_reset_at IS NULL
+     OR last_year_reset_at < now() - INTERVAL '1 year';
 END;
 $$;

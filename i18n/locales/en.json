@@ -123,5 +123,17 @@
     "helpRequested": "{{name}} needs help with Juz' {{num}}",
     "cycleReset": "A new cycle has started — your Juz' is {{num}}",
     "newAssignment": "Juz' {{num}} has been assigned to you"
+  },
+  "stats": {
+    "readingStats": "Reading Stats",
+    "lastYearJuz": "This Year",
+    "lifetimeJuz": "Lifetime Juz'",
+    "cycleProgress": "Cycle Progress",
+    "completedOf": "{{completed}} / {{total}}",
+    "missingAlert": "{{count}} Juz' need attention",
+    "allComplete": "All Juz' complete!",
+    "completed": "Completed",
+    "missing": "Missing",
+    "inProgress": "In Progress"
   }
 }

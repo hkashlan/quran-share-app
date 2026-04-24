@@ -8,6 +8,8 @@ import { useSharedStyles } from '@/hooks/useSharedStyles'
 import { useKhatmahList } from '@/hooks/useKhatmahList'
 import { useActiveInstance } from '@/hooks/useActiveInstance'
 import { useTotalJazah } from '@/hooks/useTotalJazah'
+import { useReadingStats } from '@/hooks/useReadingStats'
+import { ReadingStatsCard } from '@/components/stats/ReadingStatsCard'
 import { useSession } from '@/hooks/useSession'
 import { useFinishJuz } from '@/hooks/mutations/useFinishJuz'
 import type { Khatmah } from '@/types/khatmah'
@@ -115,6 +117,7 @@ export default function DashboardScreen() {
 
   const { data: khatmahs = [], isLoading: khatmahsLoading } = useKhatmahList()
   const { data: totalJazah, isLoading: jazahLoading } = useTotalJazah()
+  const { data: readingStats, isLoading: statsLoading } = useReadingStats()
 
   const styles = makeStyles(colors, spacing, typography)
 
@@ -149,6 +152,13 @@ export default function DashboardScreen() {
           <KText style={styles.statLabel}>{t('dashboard.totalJazah')}</KText>
         </KView>
       </KView>
+
+      {/* Reading Stats */}
+      <ReadingStatsCard
+        yearlyCount={readingStats?.totalJuzLastYear ?? null}
+        lifetimeCount={readingStats?.totalJuzLifetime ?? null}
+        isLoading={statsLoading}
+      />
 
       {/* Quick Actions */}
       {activeKhatmahs.length > 0 && userId ? (

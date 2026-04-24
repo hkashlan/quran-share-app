@@ -1195,15 +1195,7 @@ export type Database = {
           reset_calendar?: string | null
           status?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "khatmahs_creator_id_fkey"
-            columns: ["creator_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1213,6 +1205,9 @@ export type Database = {
           id: string
           jazah_total: number
           language: string
+          last_year_reset_at: string | null
+          total_juz_last_year: number
+          total_juz_lifetime: number
         }
         Insert: {
           avatar_url?: string | null
@@ -1221,6 +1216,9 @@ export type Database = {
           id: string
           jazah_total?: number
           language?: string
+          last_year_reset_at?: string | null
+          total_juz_last_year?: number
+          total_juz_lifetime?: number
         }
         Update: {
           avatar_url?: string | null
@@ -1229,6 +1227,9 @@ export type Database = {
           id?: string
           jazah_total?: number
           language?: string
+          last_year_reset_at?: string | null
+          total_juz_last_year?: number
+          total_juz_lifetime?: number
         }
         Relationships: []
       }
@@ -1266,10 +1267,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_juz_counters: {
+        Args: { p_amount?: number; p_user_id: string }
+        Returns: undefined
+      }
       increment_jazah: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
+      increment_juz_counters: {
+        Args: { p_amount?: number; p_user_id: string }
+        Returns: undefined
+      }
+      is_khatmah_member: { Args: { p_khatmah_id: string }; Returns: boolean }
+      reset_yearly_juz_counters: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

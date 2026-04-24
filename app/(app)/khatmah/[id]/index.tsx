@@ -29,6 +29,7 @@ import { useMarkHelpRequested } from '@/hooks/mutations/useMarkHelpRequested'
 import { useUnfinishJuz } from '@/hooks/mutations/useUnfinishJuz'
 import { JuzRow } from '@/components/khatmah/JuzRow'
 import { KhatmahHeader } from '@/components/khatmah/KhatmahHeader'
+import { InstanceStatsPanel } from '@/components/khatmah/InstanceStatsPanel'
 import { ManualHint } from '@/components/khatmah/ManualHint'
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ export default function KhatmahDetailScreen() {
   const assignManual = useAssignManual(id ?? '')
   const finishJuz = useFinishJuz(id ?? '', currentUserId ?? '')
   const markHelpRequested = useMarkHelpRequested(id ?? '')
-  const unfinishJuz = useUnfinishJuz(id ?? '')
+  const unfinishJuz = useUnfinishJuz(id ?? '', currentUserId ?? '')
 
   const styles = makeStyles(colors, spacing, typography)
   const isCreator = khatmah != null && currentUserId === khatmah.creatorId
@@ -192,6 +193,7 @@ export default function KhatmahDetailScreen() {
         onDistributeAutomatic={handleDistributeAutomatic}
         onCycleReset={handleCycleReset}
       />
+      <InstanceStatsPanel instance={instance} />
     </KView>
   )
 

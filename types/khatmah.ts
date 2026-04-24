@@ -60,6 +60,12 @@ export interface UserProfile {
   language: SupportedLocale
   /** Lifetime Jazah count — read from profiles.jazah_total */
   jazahTotal: number
+  /** Total Juz' completed across all time */
+  totalJuzLifetime: number
+  /** Total Juz' completed in the last 12 months */
+  totalJuzLastYear: number
+  /** ISO timestamp of the last annual reset, or null if never reset */
+  lastYearResetAt: string | null
 }
 
 // ── Service result types ──────────────────────────────────────────────────────

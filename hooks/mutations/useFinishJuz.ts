@@ -17,6 +17,9 @@ export function useFinishJuz(khatmahId: string, userId: string) {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.profile.totalJazah(userId),
       })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.profile.readingStats(userId),
+      })
     },
   })
 }

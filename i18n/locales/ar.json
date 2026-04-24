@@ -122,5 +122,17 @@
     "helpRequested": "{{name}} يحتاج مساعدة في الجزء {{num}}",
     "cycleReset": "بدأت دورة جديدة — جزؤك هو {{num}}",
     "newAssignment": "تم تعيين الجزء {{num}} إليك"
+  },
+  "stats": {
+    "readingStats": "إحصائيات القراءة",
+    "lastYearJuz": "هذا العام",
+    "lifetimeJuz": "إجمالي الأجزاء",
+    "cycleProgress": "تقدم الدورة",
+    "completedOf": "{{completed}} / {{total}}",
+    "missingAlert": "{{count}} أجزاء تحتاج اهتمام",
+    "allComplete": "اكتملت جميع الأجزاء!",
+    "completed": "مكتمل",
+    "missing": "ناقص",
+    "inProgress": "قيد القراءة"
   }
 }

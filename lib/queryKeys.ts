@@ -13,5 +13,6 @@ export const queryKeys = {
   },
   profile: {
     totalJazah: (userId: string) => ['profile', userId, 'totalJazah'] as const,
+    readingStats: (userId: string) => ['profile', userId, 'readingStats'] as const,
   },
 } as const
